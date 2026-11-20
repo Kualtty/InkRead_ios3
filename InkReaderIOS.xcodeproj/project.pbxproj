@@ -1,0 +1,259 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		CB0000000000000000000012 /* InkReaderIOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB0000000000000000000011 /* InkReaderIOSApp.swift */; };
+		CB0000000000000000000014 /* LocalServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB0000000000000000000013 /* LocalServer.swift */; };
+		CB0000000000000000000016 /* WebShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB0000000000000000000015 /* WebShellView.swift */; };
+		CB0000000000000000000018 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CB0000000000000000000017 /* Assets.xcassets */; };
+		CB000000000000000000001A /* www in Resources */ = {isa = PBXBuildFile; fileRef = CB0000000000000000000019 /* www */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		CB0000000000000000000010 /* InkReaderIOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = InkReaderIOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		CB0000000000000000000011 /* InkReaderIOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "InkReaderIOSApp.swift"; sourceTree = "<group>"; };
+		CB0000000000000000000013 /* LocalServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LocalServer.swift"; sourceTree = "<group>"; };
+		CB0000000000000000000015 /* WebShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WebShellView.swift"; sourceTree = "<group>"; };
+		CB0000000000000000000017 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Assets.xcassets"; sourceTree = "<group>"; };
+		CB0000000000000000000019 /* www */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "www"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		CB000000000000000000000E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		CB0000000000000000000003 = {
+			isa = PBXGroup;
+			children = (
+				CB0000000000000000000005 /* InkReaderIOS */,
+				CB0000000000000000000006 /* Resources */,
+				CB0000000000000000000004 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		CB0000000000000000000005 /* InkReaderIOS */ = {
+			isa = PBXGroup;
+			children = (
+				CB0000000000000000000011 /* InkReaderIOSApp.swift */,
+				CB0000000000000000000013 /* LocalServer.swift */,
+				CB0000000000000000000015 /* WebShellView.swift */,
+				CB0000000000000000000017 /* Assets.xcassets */,
+			);
+			path = InkReaderIOS;
+			sourceTree = "<group>";
+		};
+		CB0000000000000000000006 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				CB0000000000000000000019 /* www */,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+		CB0000000000000000000004 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				CB0000000000000000000010 /* InkReaderIOS.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		CB0000000000000000000002 /* InkReaderIOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CB0000000000000000000008 /* Build configuration list for PBXNativeTarget "InkReaderIOS" */;
+			buildPhases = (
+				CB000000000000000000000D /* Sources */,
+				CB000000000000000000000E /* Frameworks */,
+				CB000000000000000000000F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = InkReaderIOS;
+			productName = InkReaderIOS;
+			productReference = CB0000000000000000000010 /* InkReaderIOS.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		CB0000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					CB0000000000000000000002 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+				};
+			};
+			buildConfigurationList = CB0000000000000000000007 /* Build configuration list for PBXProject "InkReaderIOS" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = zh_CN;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+				"zh-Hans",
+			);
+			mainGroup = CB0000000000000000000003;
+			productRefGroup = CB0000000000000000000004 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				CB0000000000000000000002 /* InkReaderIOS */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		CB000000000000000000000F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CB0000000000000000000018 /* Assets.xcassets in Resources */,
+				CB000000000000000000001A /* www in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		CB000000000000000000000D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CB0000000000000000000012 /* InkReaderIOSApp.swift in Sources */,
+				CB0000000000000000000014 /* LocalServer.swift in Sources */,
+				CB0000000000000000000016 /* WebShellView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		CB0000000000000000000009 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		CB000000000000000000000A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		CB000000000000000000000B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = InkReaderIOS/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = cn.moyue.inkreader.ios;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		CB000000000000000000000C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = InkReaderIOS/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = cn.moyue.inkreader.ios;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		CB0000000000000000000007 /* Build configuration list for PBXProject "InkReaderIOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CB0000000000000000000009 /* Debug */,
+				CB000000000000000000000A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CB0000000000000000000008 /* Build configuration list for PBXNativeTarget "InkReaderIOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CB000000000000000000000B /* Debug */,
+				CB000000000000000000000C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+	};
+	rootObject = CB0000000000000000000001 /* Project object */;
+}

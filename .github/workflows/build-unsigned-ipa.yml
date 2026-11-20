@@ -1,0 +1,73 @@
+name: 编译未签名 ipa
+
+# 这台开发机是 Windows，装不了 Xcode，所以编译交给 GitHub 托管的 macOS。
+# 产物是**未签名**的 ipa：下载后要用 Sideloadly + 免费 Apple ID 自签才能装。
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+
+jobs:
+  build:
+    # macos-15 = Xcode 16 / iOS 18 SDK。macos-14 是 17.5 SDK，WKWebView 的
+    # isInspectable 等 API 会缺；部署目标仍写 17.0，老设备照样能装。
+    runs-on: macos-15
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 环境信息
+        run: |
+          xcodebuild -version
+          echo "--- 内置 www ---"
+          du -sh www || true
+          ls www | head
+
+      - name: 检查内置 www 是否存在
+        run: |
+          if [ ! -f www/index.html ]; then
+            echo "::error::www/index.html 不存在。打包前先跑 python tools/prepare_www.py"
+            exit 1
+          fi
+
+      - name: 编译
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project InkReaderIOS.xcodeproj \
+            -target InkReaderIOS \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            ONLY_ACTIVE_ARCH=NO \
+            -quiet
+
+      - name: 打 ipa
+        run: |
+          APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name "*.app" | head -1)
+          echo "产物：$APP"
+          du -sh "$APP"
+          mkdir -p Payload
+          cp -R "$APP" Payload/
+          zip -qry InkReaderIOS-unsigned.ipa Payload
+          ls -lh InkReaderIOS-unsigned.ipa
+          # 顺带把 App 里的 www 数量打出来，确认资源真进去了（漏了就白屏）
+          find Payload/*.app/www -maxdepth 1 | head -12
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: InkReaderIOS-unsigned-ipa
+          path: InkReaderIOS-unsigned.ipa
+          if-no-files-found: error
+
+      - name: 失败时把日志捞出来
+        if: failure()
+        run: |
+          find build -name "*.xcactivitylog" -o -name "*.log" | head || true

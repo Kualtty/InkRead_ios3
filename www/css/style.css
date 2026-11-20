@@ -1,0 +1,2116 @@
+/* ===========================================================
+   墨阅 InkReader Web 原型 —— iPadOS 风格样式
+   =========================================================== */
+
+/* hidden 属性必须赢过所有 display 规则：
+   像 .search-bar{display:flex}、#imgLayer[data-mode]{display:flex} 这类
+   特异性更高的选择器会把 hidden 盖掉，导致元素"看不见却还在那儿挡着点击"。 */
+[hidden]{display:none !important}
+
+/* 后端未托管提示条：页面不是由 serve.py 托管时（如直接双击 index.html / file://）出现，
+   提醒用户翻译 / 安装 / 局域网共享需要本地后端。z-index 高于一切弹层。 */
+.backend-banner{
+  position:fixed;left:0;right:0;top:0;z-index:3000;
+  background:#b3402f;color:#fff;font-size:13px;line-height:1.4;
+  padding:9px 12px;display:flex;align-items:center;gap:10px;justify-content:center;
+  box-shadow:0 2px 10px rgba(0,0,0,.25)
+}
+.backend-banner[hidden]{display:none !important}
+.backend-banner .bb-text{flex:1;text-align:center}
+.backend-banner .bb-close{
+  flex:0 0 auto;background:rgba(255,255,255,.22);border:0;color:#fff;
+  border-radius:8px;padding:5px 12px;font-size:13px;cursor:pointer
+}
+.backend-banner .bb-close:active{background:rgba(255,255,255,.35)}
+.backend-banner .bb-btn{
+  flex:0 0 auto;background:#fff;color:#b3402f;font-weight:700;
+  border:0;border-radius:8px;padding:5px 14px;font-size:13px;cursor:pointer
+}
+.backend-banner .bb-btn:active{background:#ffe9e4}
+.backend-banner .bb-btn-danger{background:rgba(255,255,255,.9);color:#7a1f12}
+/* R90：服务进程已经没了的时候，页面的两个按钮都发不出去请求 —— 只有系统协议
+   能把它拉起来。做成链接（a），点了会弹「要打开 InkReader 吗」，确认即启动。 */
+.backend-banner .bb-btn-revive{
+  text-decoration:none;background:#fff;color:#7a1f12;
+  display:inline-flex;align-items:center
+}
+/* 本地代理未检测到的常驻提示（修 #11）：用琥珀色与红色后端横幅区分 */
+.proxy-banner{
+  position:fixed;left:0;right:0;top:0;z-index:3001;
+  background:#a8651b;color:#fff;font-size:13px;line-height:1.4;
+  padding:9px 12px;display:flex;align-items:center;gap:10px;justify-content:center;
+  box-shadow:0 2px 10px rgba(0,0,0,.25)
+}
+.proxy-banner[hidden]{display:none !important}
+.proxy-banner .pb-text{flex:1;text-align:center}
+.proxy-banner .pb-text code{background:rgba(255,255,255,.18);border-radius:4px;padding:1px 5px;font-size:12px}
+.proxy-banner .pb-close{
+  flex:0 0 auto;background:rgba(255,255,255,.22);border:0;color:#fff;
+  border-radius:8px;padding:5px 12px;font-size:13px;cursor:pointer
+}
+.proxy-banner .pb-close:active{background:rgba(255,255,255,.35)}
+
+:root{
+  --ios-blue:#007AFF;
+  --ios-blue-dark:#0060DF;
+  --ios-red:#FF3B30;
+  --ios-green:#34C759;
+  --ios-orange:#FF9500;
+  --ios-gray:#8E8E93;
+  --ios-gray2:#AEAEB2;
+  --ios-gray3:#C7C7CC;
+  --ios-gray4:#D1D1D6;
+  --ios-gray5:#E5E5EA;
+  --ios-gray6:#F2F2F7;
+  --ios-bg:#FFFFFF;
+  --ios-group-bg:#F2F2F7;
+  --ios-label:#000000;
+  --ios-label2:#3C3C43;
+  --ios-separator:rgba(60,60,67,.29);
+  --radius:12px;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","PingFang SC","Helvetica Neue","Microsoft YaHei",sans-serif;
+  /* 阅读器主题变量（JS 动态覆盖） */
+  --reader-bg:#F7F4EC;
+  --reader-fg:#2B2B2B;
+  --reader-font:18px;
+  --reader-line:1.75;
+  --reader-letter:0.5px;
+  --reader-para:0.9em;
+  --reader-family:"PingFang SC","Songti SC","Georgia",serif;
+  --reader-margin:56px;
+  --reader-align:left;
+  --reader-weight:400;
+}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none !important}
+html,body{height:100%}
+body{
+  margin:0;font-family:var(--font);background:#E9EAEE;color:var(--ios-label);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;font-size:inherit}
+input,textarea{font-family:inherit}
+
+/* ---------- 原型控制条 ---------- */
+.proto-bar{
+  flex:0 0 auto;height:46px;background:#2C2C2E;color:#fff;display:flex;align-items:center;
+  gap:14px;padding:0 16px;font-size:12.5px;
+}
+.proto-title{font-weight:600;letter-spacing:.3px}
+.proto-seg{display:flex;background:#3A3A3C;border-radius:8px;padding:2px}
+.proto-seg .seg-btn{color:#D8D8DD;padding:4px 10px;border-radius:6px;font-size:12px}
+.proto-seg .seg-btn.active{background:#636366;color:#fff}
+.proto-check{display:flex;align-items:center;gap:5px;color:#D8D8DD;margin-left:auto}
+.proto-btn{background:#48484A;color:#fff;padding:5px 12px;border-radius:6px;font-size:12px}
+.proto-btn:hover{background:#5A5A5C}
+.proto-hint{color:#8E8E93;font-size:11.5px;max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ---------- 舞台 & iPad 外壳 ---------- */
+.stage{
+  /* 居中不能用 justify-content/align-items:center —— 内容比舞台大时会把左侧/顶部
+     推出可视区且**滚不回去**（iPad 竖、Pro 横、手机上选 iPad 尺寸都会这样）。
+     改成 margin:auto：放得下时居中，放不下时自动让位，滚动条能滚到两头。 */
+  flex:1 1 auto;display:flex;align-items:flex-start;justify-content:flex-start;
+  padding:18px;overflow:auto;
+}
+.ipad{
+  background:#111;
+  border-radius:26px;
+  padding:11px;
+  box-shadow:0 24px 70px rgba(0,0,0,.38),0 0 0 2px #2A2A2C inset;
+  transition:width .3s ease,height .3s ease;
+  width:1046px;height:790px;
+  position:relative;flex:0 0 auto;margin:auto;
+}
+.ipad.fullscreen{width:100%;height:100%;padding:0;border-radius:0}
+/* 自适应全屏：连舞台那 18px 留白一起去掉，真正贴边 */
+.stage.stage-full{padding:0}
+/* 手机窗口：外壳圆角更大（390×844 标准手机；JS 会按可用高度等比缩小） */
+.ipad.phone{border-radius:38px}
+.ipad.phone .ipad-screen{border-radius:30px}
+.ipad-screen{
+  position:relative;width:100%;height:100%;background:var(--ios-group-bg);
+  border-radius:16px;overflow:hidden;isolation:isolate;
+}
+
+/* 状态栏 */
+.status-bar{
+  position:absolute;top:0;left:0;right:0;height:24px;z-index:900;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;font-size:13px;font-weight:600;color:#000;pointer-events:none;
+}
+.sb-right{display:flex;align-items:center;gap:6px;font-size:11.5px}
+.sb-battery{width:24px;height:12px;border:1.4px solid rgba(0,0,0,.4);border-radius:3px;position:relative}
+.sb-battery::after{content:"";position:absolute;right:-3.5px;top:3px;width:2px;height:5px;background:rgba(0,0,0,.4);border-radius:0 1px 1px 0}
+.sb-battery::before{content:"";position:absolute;left:1.5px;top:1.5px;bottom:1.5px;width:16px;background:#000;border-radius:1.5px}
+.status-bar.on-dark{color:#fff}
+.status-bar.on-dark .sb-battery{border-color:rgba(255,255,255,.5)}
+.status-bar.on-dark .sb-battery::after{background:rgba(255,255,255,.5)}
+.status-bar.on-dark .sb-battery::before{background:#fff}
+.home-indicator{
+  position:absolute;bottom:7px;left:50%;transform:translateX(-50%);
+  width:140px;height:5px;background:rgba(0,0,0,.28);border-radius:3px;z-index:900;pointer-events:none;
+}
+
+/* ---------- 视图切换 ---------- */
+.view{position:absolute;inset:0;display:none;flex-direction:column;overflow:hidden}
+.view.active{display:flex}
+
+/* ===========================================================
+   书架：iPad 分栏（sidebar + content）
+   =========================================================== */
+/* ⚠️ 这里绝对不能写 position:relative —— `.view` 是 `position:absolute;inset:0`，
+   同一特异性下后者被这条覆盖，书架就变成普通流元素、高度被卡片列表撑到几千像素，
+   .lib-scroll 跟着被撑高、没有溢出 → 整个书架 / 侧栏都滑不动（R105 用户反馈）。
+   #libBg 的绝对定位以 .view 自身为参照即可，不需要再加定位。 */
+.view-library{flex-direction:row;background:var(--lib-bg,var(--ios-bg))}
+/* ---------- 界面背景（书架 + 侧边栏） ----------
+   --lib-bg          整体背景色（图片衬在它上面，所以「下方就是背景色」）
+   --lib-sidebar-bg  侧边栏单独颜色（不设就跟 --lib-bg）
+   #libBg            背景图（opacity = 设置的透明度），铺满整页、不吃点击 */
+.lib-bg{
+  position:absolute;inset:0;z-index:0;pointer-events:none;
+  background-position:center;background-size:cover;background-repeat:no-repeat;
+  transition:opacity .25s ease;
+}
+.view-library > *:not(.lib-bg){position:relative;z-index:1}
+/* 有底图时两块面板转半透明，否则底图被纯色盖住等于没设。
+   半透明白叠在底图上，正文仍然看得清。 */
+.view-library.has-bg .lib-sidebar{background:var(--lib-side-bg,rgba(255,255,255,.72));backdrop-filter:blur(2px)}
+.view-library.has-bg .lib-main{background:var(--lib-main-bg,rgba(255,255,255,.52))}
+/* 用户给侧边栏单独选了颜色 → 用不透明的那个颜色 */
+.view-library.keep-side .lib-sidebar{background:var(--lib-sidebar-bg)}
+.view-library.keep-side.has-bg .lib-sidebar{background:var(--lib-sidebar-bg)}
+.lib-sidebar{
+  width:250px;flex:0 0 250px;
+  /* 以前写死 var(--ios-group-bg)（不透明的浅灰），把 --lib-bg 完全盖住 ——
+     用户改「背景色」看上去什么都没发生，只有插了图片才因为 has-bg 半透明而「有效」。
+     现在默认仍是原来的灰，但一旦设了 --lib-bg / --lib-sidebar-bg 就跟着走。 */
+  background:var(--lib-sidebar-bg,var(--lib-bg,var(--ios-group-bg)));
+  /* 侧边栏可能和主区深浅完全不同（用户单独选了侧栏色），
+     所以它有一套自己的文字色 --lib-side-*；没设就回落到主区那套。 */
+  color:var(--lib-side-fg,var(--lib-fg,var(--ios-label)));
+  border-right:.5px solid var(--lib-side-border,var(--ios-separator));
+  display:flex;flex-direction:column;padding:34px 12px 14px;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+}
+.lib-brand{display:flex;align-items:center;gap:9px;padding:0 8px 18px}
+.lib-logo{
+  width:30px;height:30px;border-radius:8px;background:linear-gradient(145deg,#007AFF,#5AC8FA);
+  color:#fff;font-size:16px;font-weight:700;display:grid;place-items:center;
+}
+.lib-brand-text{font-size:19px;font-weight:700;letter-spacing:.5px;color:var(--lib-side-fg,var(--lib-fg,var(--ios-label)))}
+.lib-nav{display:flex;flex-direction:column;gap:2px;flex:0 0 auto;overflow:visible}
+.nav-item{
+  display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;
+  font-size:15px;color:var(--lib-side-fg,var(--lib-fg,var(--ios-label)));text-align:left;
+}
+.nav-item:hover{background:var(--lib-side-hover,var(--lib-hover,rgba(0,0,0,.05)))}
+.nav-item.active{background:var(--lib-side-hover-2,var(--lib-hover-2,rgba(0,0,0,.08)));font-weight:600}
+.nav-ico{font-size:15px;width:20px;text-align:center}
+.lib-sidebar-foot{padding-top:10px;border-top:.5px solid var(--lib-side-border,var(--ios-separator))}
+.import-btn{
+  width:100%;background:var(--lib-side-accent,var(--ios-blue));color:var(--lib-side-accent-fg,#fff);border-radius:11px;padding:11px;margin-bottom:9px;
+  font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.import-btn:hover{filter:brightness(.94)}
+/* 导入文件夹：次级按钮，与「导入图书」拉开层级、互不重叠 */
+.lib-sidebar-foot .import-btn:not(.primary){
+  background:transparent;color:var(--lib-side-accent,var(--ios-blue));
+  border:1.5px solid var(--lib-side-accent,var(--ios-blue));
+}
+.lib-sidebar-foot .import-btn:not(.primary):hover{background:var(--lib-side-hover,var(--ios-fill,#F2F2F7))}
+.plus{font-size:17px;line-height:1}
+.lib-stats{text-align:center;font-size:12px;color:var(--lib-side-fg-dim,var(--lib-fg-dim,var(--ios-gray)));margin-top:9px}
+.lib-ver{text-align:center;font-size:10.5px;color:var(--lib-side-fg-dim,var(--lib-fg-dim,var(--ios-gray-2,var(--ios-gray))));margin-top:3px;opacity:.75;letter-spacing:.3px}
+.lib-share{
+  margin-top:7px;width:100%;border:1px solid var(--lib-side-border,var(--ios-separator));background:transparent;
+  color:var(--lib-side-accent,var(--ios-blue));border-radius:8px;padding:7px;font-size:12.5px;cursor:pointer;
+}
+.lib-share:hover{background:var(--lib-side-hover,var(--ios-fill,#F2F2F7))}
+/* 「卸载 / 清除」：一直没写过样式，靠浏览器默认的 button 黑字 —— 侧栏一旦选深色，
+   这行字就变成黑压深底、几乎看不见。补一条，跟着侧栏字色走。 */
+.lib-uninstall{
+  width:100%;margin-top:7px;padding:6px;border:none;background:transparent;border-radius:8px;
+  font-size:12.5px;color:var(--lib-side-fg-dim,var(--lib-fg-dim,var(--ios-gray)));cursor:pointer;
+}
+.lib-uninstall:hover{background:var(--lib-side-hover,var(--ios-fill,#F2F2F7));color:var(--ios-red)}
+
+/* 共享面板 */
+.share-body{padding:6px 0 4px}
+.share-body .input-wrap input{
+  width:100%;border:1px solid var(--ov-line,var(--ios-separator));border-radius:9px;padding:9px 11px;
+  font-size:15px;background:var(--ov-field-2,var(--ios-bg-2,#F2F2F7));color:var(--ov-fg,var(--ios-label));
+}
+.share-acts{display:flex;gap:8px;margin:10px 0}
+.share-acts button{flex:1;padding:9px;font-size:14px;border-radius:9px}
+/* R155：共享面板三个页签（我分享 / 我接收 / 连设备）。以前 .seg 没有样式，
+   两个页签是裸按钮；加第三个之前先把它做成和 .seg-full 一致的胶囊。 */
+#shareSeg{
+  display:flex;gap:3px;padding:3px;border-radius:10px;
+  background:var(--ov-field,var(--ios-gray6,#F2F2F7));
+}
+#shareSeg .seg-btn{
+  flex:1;padding:7px 4px;border-radius:8px;border:0;background:transparent;cursor:pointer;
+  font-size:12.5px;line-height:1.2;white-space:nowrap;color:var(--ov-fg,var(--ios-label));
+  font-family:inherit;
+}
+#shareSeg .seg-btn.active{
+  background:var(--ov-field-2,#fff);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.1);
+}
+.ipad.phone #shareSeg .seg-btn{font-size:11px;padding:7px 2px}
+/* 手机上所有 sheet 的 30px 外边距太奢侈（390 宽只剩 275 给内容），收窄 */
+.ipad.phone .sheet{padding:14px}
+.share-tip{
+  font-size:12.5px;color:var(--ov-fg-dim,var(--ios-gray));line-height:1.65;padding:8px 2px;
+}
+.share-tip code{
+  background:var(--ov-field,var(--ios-fill,#F2F2F7));padding:1px 5px;border-radius:4px;font-size:12px;
+}
+.share-list{max-height:44vh;overflow:auto;margin-top:6px}
+.share-item{
+  display:flex;align-items:flex-start;gap:10px;padding:11px 4px;
+  border-bottom:1px solid var(--ov-line,var(--ios-separator));font-size:14.5px;cursor:pointer;
+}
+/* R70：名字不再 ellipsis 截断（用户反馈「名字咋不露全」）—— 允许换行，整条显示 */
+.share-item .si-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.share-item .si-main b{
+  flex:none;font-weight:600;line-height:1.35;
+  white-space:normal;word-break:break-word;overflow-wrap:anywhere;
+}
+.share-item span{color:var(--ov-fg-dim,var(--ios-gray));font-size:12.5px}
+.share-item.on{background:var(--ov-hover-2,var(--ios-fill,#F2F2F7));border-radius:8px}
+.share-item input[type="checkbox"]{width:18px;height:18px;margin-top:3px;flex:none}
+.share-item .share-dl{padding:5px 12px;font-size:13px;white-space:nowrap}
+.si-dup{font-style:normal;color:var(--ios-orange,#FF9500)}
+/* R132（第 5 条）：同名书要能分开 —— 「同名 1/2」徽标 + 第二行身份信息 */
+.si-same{
+  font-style:normal;font-weight:600;font-size:11px;margin-left:6px;
+  padding:0 5px;border-radius:5px;vertical-align:1px;
+  background:var(--ov-accent-soft,rgba(0,122,255,.14));color:var(--ov-accent,var(--ios-blue));
+}
+.share-item .si-id{font-size:11.5px;opacity:.92;word-break:break-word}
+.share-bulk{
+  display:flex;align-items:center;gap:10px;padding:8px 4px;
+  border-bottom:1px solid var(--ov-line,var(--ios-separator));
+}
+.share-bulk .share-allck{display:flex;align-items:center;gap:6px;font-size:13.5px;color:var(--ov-fg,var(--ios-label))}
+.share-bulk .btn-primary{margin-left:auto;padding:6px 14px;font-size:13px}
+/* 自定义目录规则：命中预览 */
+.toc-custom-preview{font-size:12.5px;line-height:1.5;color:var(--ov-fg,var(--ios-label));padding:2px 2px 0;min-height:0}
+.toc-custom-preview:empty{display:none}
+/* 选择弹窗 */
+/* 选择弹窗的搜索条（R134）：书多了必须能按名字找，否则只能滚 */
+.choice-search{display:flex;align-items:center;gap:8px;padding:0 16px 8px}
+.choice-search[hidden]{display:none}
+.choice-search input{
+  flex:1;min-width:0;padding:9px 12px;font-size:15px;border-radius:10px;outline:none;
+  border:1px solid var(--ov-line,var(--ios-separator));
+  background:var(--ios-fill,#F2F2F7);color:var(--ov-fg,var(--ios-label));
+  -webkit-appearance:none;appearance:none;
+}
+.choice-search input:focus{border-color:var(--ios-blue)}
+.choice-search input::placeholder{color:var(--ov-fg-dim,var(--ios-gray));opacity:1}
+.choice-search input::-webkit-search-cancel-button{-webkit-appearance:none;display:none}
+.choice-empty{padding:18px 20px;font-size:14px;color:var(--ov-fg-dim,var(--ios-gray));text-align:center}
+.choice-list{max-height:56vh;overflow:auto;padding:6px 0}
+.choice-item{
+  display:block;width:100%;text-align:left;border:0;background:transparent;
+  padding:13px 20px;font-size:16px;color:var(--ios-label);cursor:pointer;
+  border-bottom:1px solid var(--ios-separator);
+}
+.choice-item:last-child{border-bottom:0}
+.choice-item.sel{color:var(--ios-blue);font-weight:600}
+.choice-item.sel::after{content:' ✓';float:right}
+.choice-item:hover{background:var(--ios-fill,#F2F2F7)}
+
+/* 收藏夹颜色点 */
+.coll-dot{width:9px;height:9px;border-radius:50%;flex:0 0 9px;margin-right:2px}
+.coll-more{
+  position:absolute;right:6px;top:50%;transform:translateY(-50%);
+  width:26px;height:26px;border-radius:7px;display:grid;place-items:center;
+  color:var(--ios-gray);font-size:17px;line-height:1;opacity:.75;
+}
+.coll-more:hover{opacity:1;background:var(--ios-fill)}
+/* 每条收藏夹一行：.coll-row 才是 .coll-more 的定位基准，
+   否则 ⋯ 会脱离本行、全部叠在侧栏中间（点谁都点到同一个） */
+.coll-row{position:relative;display:flex;align-items:center;min-width:0}
+/* 右边留 40px：⋯（26px）+ 间距，数量徽标停在 ⋯ 左边，不再压在一起 */
+.coll-row .nav-item{flex:1;min-width:0;padding-right:46px}
+/* 名字和 ⋯ 之间留出真正的空隙（以前数量徽标离 ⋯ 只有 6px，看着连成一片，
+   点文件夹常误点到「管理」） */
+.coll-row .nav-count{margin-right:2px}
+.lib-nav .nav-item{position:relative}
+/* 折叠箭头 + 分类标签 */
+.coll-chev{width:20px;height:28px;flex:0 0 20px;border:none;background:transparent;
+  color:var(--ios-gray,#8e8e93);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.coll-chev-leaf{visibility:hidden;cursor:default}
+.coll-scope{display:inline-block;margin-left:6px;padding:0 6px;font-size:10px;line-height:16px;
+  border-radius:8px;background:var(--ios-gray6,#f2f2f7);color:var(--ios-gray,#8e8e93);vertical-align:middle}
+
+.lib-main{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--lib-bg,var(--ios-bg));color:var(--lib-fg,var(--ios-label))}
+.lib-header{padding:34px 26px 12px;border-bottom:.5px solid var(--lib-line,var(--ios-separator))}
+/* 标题行 + 返回按钮：在嵌套文件夹里往深处点了几层之后，不用再从侧栏顶部重新找路径 */
+.lib-title-row{display:flex;align-items:center;gap:12px}
+.lib-h1{margin:0 0 14px;font-size:32px;font-weight:700;letter-spacing:-.5px}
+.lib-back{
+  flex:0 0 auto;width:36px;height:36px;margin:0 0 14px;border:none;border-radius:50%;
+  background:var(--lib-field,var(--ios-gray6));color:var(--lib-fg,var(--ios-label));font-size:18px;line-height:1;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  transition:background .15s,transform .12s;
+}
+.lib-back:hover{background:var(--lib-field-2,var(--ios-gray5))}
+.lib-back:active{transform:scale(.92)}
+/* 侧栏抽屉开关：只在窄屏出现（桌面/平板侧栏是常驻的，不需要这个） */
+.lib-menu{
+  display:none;flex:0 0 auto;width:36px;height:36px;margin:0 0 14px;border:none;border-radius:10px;
+  background:var(--lib-field,var(--ios-gray6));color:var(--lib-fg,var(--ios-label));
+  font-size:17px;line-height:1;cursor:pointer;align-items:center;justify-content:center;
+}
+.lib-menu:active{transform:scale(.94)}
+.lib-side-scrim{display:none}
+.ipad.phone .lib-menu{display:flex}
+/* 面包屑：文本小说 / A / A1 —— 每一段都能点，直接跳到那一层 */
+.lib-crumb{
+  display:flex;align-items:center;gap:5px;flex-wrap:wrap;
+  font-size:12.5px;color:var(--lib-fg-dim,var(--ios-label2));margin:-6px 0 12px 48px;
+}
+.lib-crumb .lc-sep{opacity:.45}
+.lib-crumb .lc-item{color:var(--lib-accent,var(--ios-blue));cursor:pointer;text-decoration:none}
+.lib-crumb .lc-item:hover{text-decoration:underline}
+.lib-crumb .lc-here{color:var(--lib-fg-dim,var(--ios-label2));cursor:default}
+.lib-crumb .lc-here:hover{text-decoration:none}
+.lib-tools{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.search-field{
+  /* 排序多了「加入」「手动」和方向按钮，搜索框别再抢满一行（会让「Aa 设置」掉到第二行） */
+  flex:1 1 150px;max-width:300px;min-width:120px;background:var(--lib-field,var(--ios-gray6));border-radius:10px;
+  display:flex;align-items:center;gap:7px;padding:7px 11px;
+}
+.search-ico{font-size:13px;opacity:.5}
+.search-field input{flex:1;border:none;background:none;outline:none;font-size:15px;color:var(--lib-fg,var(--ios-label))}
+/* R132（第 2 条）：以前又叠了 opacity:.75，本身 .62/.72 的透明度再乘一次就只剩四成 —— 深底上看不清 */
+.search-field input::placeholder{color:var(--lib-fg-dim,var(--ios-gray));opacity:1}
+.seg-ctrl{display:flex;background:var(--lib-field,var(--ios-gray6));border-radius:9px;padding:2px}
+.seg-ctrl .seg-btn{padding:5px 10px;border-radius:7px;font-size:14px;color:var(--lib-fg,var(--ios-label));white-space:nowrap}
+.seg-ctrl .seg-btn.active{background:var(--lib-field-2,#fff);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+
+.lib-scroll{flex:1;overflow-y:auto;padding:18px 26px 40px}
+.continue-row{margin-bottom:22px}
+/* 「继续阅读」+ 书架文字：跟界面背景一起走（--lib-card-bg / --lib-fg 由 applyUiBg 写入），
+   没设过就回落到原来的灰底黑字。 */
+.continue-title{font-size:13px;font-weight:600;color:var(--lib-fg-dim,var(--ios-gray));text-transform:uppercase;letter-spacing:.6px;margin-bottom:9px}
+.continue-card{
+  display:flex;gap:14px;background:var(--lib-card-bg,var(--ios-gray6));border-radius:14px;padding:13px;align-items:center;
+  cursor:pointer;transition:transform .12s;max-width:520px;
+}
+.continue-card:hover{transform:translateY(-1px)}
+.continue-card .cc-cover{width:52px;height:74px;border-radius:6px;object-fit:cover;background:#DDD;opacity:var(--lib-cover-a,1)}
+.continue-card .cc-info{flex:1;min-width:0}
+.continue-card .cc-t{font-size:16px;font-weight:600;color:var(--lib-fg,var(--ios-label));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.continue-card .cc-p{font-size:13px;color:var(--lib-fg-dim,var(--ios-gray));margin-top:3px}
+.pbar{height:5px;background:var(--ios-gray4);border-radius:3px;margin-top:8px;overflow:hidden}
+.pbar>i{display:block;height:100%;background:var(--lib-accent,var(--ios-blue));border-radius:3px}
+
+.book-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:22px 20px}
+.book-card{cursor:pointer;position:relative;transition:transform .12s}
+.book-card:hover{transform:translateY(-3px)}
+/* 封面「板」的不透明度（--lib-cover-a 由 applyUiBg 写入，默认 1 = 原来那样）。
+   只淡底板（渐变/分类色/封面图），书名、角标、星级照旧不透明 ——
+   否则整块一起淡下去，封面上那行白字和右上角的按钮就都看不清了。 */
+.book-card{--cv-a:var(--lib-cover-a,1)}
+.book-cover{
+  width:100%;aspect-ratio:3/4;border-radius:9px;overflow:hidden;position:relative;
+  --cv-c1:#C9D6E4;--cv-c2:#9FB3C8;
+  background:linear-gradient(160deg,#C9D6E4,#9FB3C8);
+  /* 带 alpha 的版本（color-mix 不支持时自动回落到上面那条不透明渐变） */
+  background:linear-gradient(160deg,
+    color-mix(in srgb,var(--cv-c1) calc(var(--cv-a) * 100%),transparent),
+    color-mix(in srgb,var(--cv-c2) calc(var(--cv-a) * 100%),transparent));
+  box-shadow:0 5px 14px rgba(0,0,0,.16);
+  box-shadow:0 5px 14px rgba(0,0,0,calc(.16 * var(--cv-a)));
+  display:grid;place-items:center;
+}
+.book-cover img{width:100%;height:100%;object-fit:cover;display:block;opacity:var(--cv-a,1)}
+/* 封面透了以后，白字压在半透明浅底上会糊 —— 加大描边阴影保住可读性 */
+.view-library.cover-dim .book-cover .cover-txt{text-shadow:0 1px 3px rgba(0,0,0,.85),0 0 10px rgba(0,0,0,.55)}
+.view-library.cover-dim .book-cover .cover-badge{background:rgba(0,0,0,.65)}
+.book-cover .cover-txt{
+  position:absolute;inset:0;padding:14px 12px;display:flex;flex-direction:column;justify-content:flex-end;
+  color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.4);
+}
+.book-cover .cover-title{font-size:14px;font-weight:600;line-height:1.3;max-height:3.9em;overflow:hidden}
+.book-cover .cover-badge{
+  position:absolute;top:7px;left:7px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;
+  padding:2.5px 7px;border-radius:5px;font-weight:600;letter-spacing:.4px;backdrop-filter:blur(4px);
+}
+.book-card .bc-title{font-size:13.5px;font-weight:600;margin-top:9px;line-height:1.35;max-height:2.7em;overflow:hidden;color:var(--lib-fg,var(--ios-label))}
+.book-card .bc-sub{font-size:11.5px;color:var(--lib-fg-dim,var(--ios-gray));margin-top:2px}
+.book-card .pbar{margin-top:6px;height:4px}
+/* 常驻显示：触屏没有 hover，悬停才出现等于点不到 */
+.book-star{
+  position:absolute;top:4px;left:4px;z-index:4;
+  width:32px;height:32px;display:grid;place-items:center;
+  font-size:21px;line-height:1;cursor:pointer;border-radius:9px;
+  color:rgba(255,255,255,.95);text-shadow:0 1px 3px rgba(0,0,0,.55);
+  background:rgba(0,0,0,.26);transition:transform .12s,background .12s;
+}
+.book-star:hover{transform:scale(1.12);background:rgba(0,0,0,.42)}
+.book-star.on{color:#FFD43B;background:rgba(0,0,0,.34)}
+.book-star:active{transform:scale(.92)}
+/* 触屏可点区域至少 44×44（Apple HIG）。
+   封面上的小图标视觉上不能变大，否则会压住封面 ——
+   用透明伪元素把「可点范围」向外撑开，外观保持不变。
+   注意别给 .book-star 加 overflow:hidden，会把扩展区裁掉。 */
+.book-star::after, .book-more::after, .book-del::after{
+  content:'';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:44px;height:44px;border-radius:50%;
+}
+.book-pin{position:absolute;top:4px;right:6px;z-index:3;font-size:13px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))}
+.book-more{
+  position:absolute;bottom:5px;right:6px;z-index:4;width:32px;height:26px;
+  display:grid;place-items:center;border-radius:7px;cursor:pointer;
+  color:#fff;font-size:19px;line-height:1;background:rgba(0,0,0,.34);
+  transition:background .12s;
+}
+.book-card:hover .book-more{background:rgba(0,0,0,.5)}
+.book-more:active{transform:scale(.92)}
+
+/* 收藏夹侧栏 */
+.lib-coll-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px 5px;font-size:12px;color:var(--lib-side-fg-dim,var(--ios-gray));
+}
+.coll-add{
+  background:none;border:none;color:var(--lib-side-accent,var(--ios-blue));font-size:17px;
+  line-height:1;cursor:pointer;padding:0 3px;
+}
+.nav-count{margin-left:auto;font-size:12px;color:var(--lib-side-fg-dim,var(--ios-gray))}
+.coll-empty{padding:2px 16px 10px;font-size:11.5px;color:var(--lib-side-fg-dim,var(--ios-gray));line-height:1.5}
+
+/* 收藏夹批量整理模式 */
+.coll-manage-bar{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--lib-side-border,var(--ios-separator));font-size:12px;color:var(--lib-side-fg,var(--ios-label))}
+.coll-manage-bar .btn-plain{padding:5px 12px;font-size:12px;background:var(--lib-side-field,var(--ios-gray6));color:var(--lib-side-accent,var(--ios-blue))}
+.coll-manage-info{margin-left:auto;color:var(--lib-side-fg-dim,var(--ios-gray))}
+/* 收藏夹批量整理模式。
+   一行要塞「勾选 + 折叠 + 名字 + 上移 + 下移」—— 以前还带颜色点、📁 图标、
+   gap 6px，名字被压成 0 宽、整栏横向溢出（手机 73px 可用宽度直接灾难）。 */
+.coll-manage-row{display:flex;align-items:center;gap:4px;padding:2px 8px;min-width:0;overflow:hidden}
+.coll-manage-row .coll-name{flex:1 1 auto;min-width:32px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13.5px;color:var(--lib-side-fg,var(--ios-label))}
+/* 数量别贴着名字（「我的漫画20」看着像名字里带了个 20） */
+.coll-manage-row .coll-name>.nav-count{margin-left:8px}
+.coll-check{border:none;background:none;font-size:15px;line-height:1;cursor:pointer;color:var(--lib-side-fg-dim,var(--ios-gray));
+  flex:0 0 20px;width:20px;padding:0;display:grid;place-items:center}
+.coll-check.on{color:var(--lib-side-accent,var(--ios-blue))}
+.coll-manage-row .coll-chev{flex:0 0 16px;width:16px}
+.coll-mv{flex:0 0 22px;width:22px;height:24px;border:none;border-radius:6px;background:var(--lib-side-field,var(--ios-gray6));color:var(--lib-side-fg,var(--ios-label));font-size:12px;cursor:pointer;padding:0}
+.coll-mv:disabled{opacity:.35;cursor:default}
+#collNav{overflow-x:hidden}
+.coll-manage-foot{display:flex;align-items:center;gap:8px;padding:10px 12px;border-top:1px solid var(--lib-side-border,var(--ios-separator));position:sticky;bottom:0;background:var(--lib-sidebar-bg,var(--ios-bg,#fff))}
+.coll-manage-foot .btn-danger{margin-left:auto}
+.btn-danger{background:var(--ios-red,#FF3B30);color:#fff;border:none;border-radius:10px;padding:9px 16px;font-size:14px;font-weight:600;cursor:pointer}
+.btn-danger[disabled]{opacity:.45;cursor:default}
+
+/* 操作菜单 */
+.menu-card{width:min(360px,100%)}
+.menu-list{padding:4px 14px 0;max-height:min(56vh,420px);overflow:auto}
+.menu-item{
+  display:block;width:100%;text-align:left;background:none;border:none;
+  padding:12px 10px;font-size:15.5px;color:var(--ov-fg,var(--ios-label));border-radius:8px;
+  border-bottom:1px solid var(--ov-line,var(--ios-separator));
+}
+.menu-item:last-child{border-bottom:none}
+.menu-item:hover{background:var(--ov-hover,var(--ios-gray6))}
+.menu-item.danger{color:var(--ov-red,var(--ios-red))}
+.menu-item.sel{color:var(--ov-accent,var(--ios-blue));font-weight:600}
+
+/* 输入弹窗 */
+.input-wrap{padding:0 20px}
+.input-wrap input{
+  width:100%;padding:11px 12px;font-size:15.5px;border:1px solid var(--ov-line,var(--ios-separator));
+  border-radius:10px;outline:none;background:var(--ov-field-2,var(--ios-bg));color:var(--ov-fg,var(--ios-label));
+}
+.input-wrap input:focus{border-color:var(--ios-blue)}
+/* R132（第 2 条）：输入框的占位文字以前一条规则都没有 —— 浏览器默认给的是「前景色 54% 黑」，
+   落在深色 / 彩色底上就是一片糊掉的灰（用户截图：共享面板「共享密码（对方下载时要输入）」）。
+   统一走派生灰字（--ov-fg-dim 已按 4.5:1 反算），并且把 UA 自带的透明度关掉。 */
+.input-wrap input::placeholder{
+  color:var(--ov-fg-dim,var(--ios-gray));opacity:1;
+}
+/* 常驻显示：iPad 没有 hover，悬停才出现等于根本点不到 */
+.book-del{
+  position:absolute;top:5px;right:5px;width:24px;height:24px;border-radius:50%;
+  background:rgba(0,0,0,.55);color:#fff;font-size:14px;display:grid;place-items:center;line-height:1;
+  padding-bottom:2px;z-index:6;
+}
+
+.empty-state{text-align:center;padding:70px 20px;color:var(--lib-fg-dim,var(--ios-gray))}
+.empty-ico{font-size:52px;margin-bottom:14px;opacity:.5}
+.empty-title{font-size:19px;font-weight:600;color:var(--lib-fg,var(--ios-label));margin-bottom:6px}
+.empty-sub{font-size:14px;line-height:1.6;margin-bottom:18px}
+.btn-primary{background:var(--lib-accent,var(--ios-blue));color:var(--lib-accent-fg,#fff);border-radius:10px;padding:10px 22px;font-size:15px;font-weight:600}
+.btn-primary:hover{filter:brightness(.94)}
+.btn-plain{background:var(--lib-field,var(--ios-gray6));color:var(--lib-accent,var(--ios-blue));border-radius:10px;padding:10px 22px;font-size:15px;font-weight:600}
+/* 「⏹ 停止」被点下之后：变灰 + 光标变进度，明确表示「已经收下了，正在停」。
+   没有这个态时用户只能盯着状态行，一页两三分钟，很容易以为没点着又连点几次。 */
+.btn-plain.is-stopping{opacity:.55;cursor:progress}
+/* 抽屉从右侧滑出，会盖到右边那条浮动缩放条上（PDF / 漫画各一条），
+   而缩放条是 fixed/浮层，仍然压在抽屉上方 —— 抽屉里靠右的按钮（⏹ 停止）就被那颗 A 压住，
+   看得见一半、点着还容易点错。抽屉开着就先让开（:has 不支持时这条被忽略，不会更糟）。 */
+body:has(.drawer.show) #comicZoomCtl,
+body:has(.drawer.show) #pdfZoomCtl{visibility:hidden;pointer-events:none}
+
+/* ===========================================================
+   阅读器
+   =========================================================== */
+.view-reader{background:var(--reader-bg)}
+/* touch-action: 放开纵向滚动（上下模式与漫画长图要靠它），
+   横向手势留给滑动翻页处理 */
+.reader-content{position:absolute;inset:0;overflow:hidden;touch-action:pan-y}
+.page-layer,.scroll-layer{
+  position:absolute;inset:0;display:none;
+  /* 下留白要比底栏高（58px）再多一截：底栏是浮在正文上的，不留白的话
+     滚到底时最后一行字正好被它压住（R106 用户反馈「下面栏有时候会挡字」）。 */
+  /* R170：左右边距由 JS 按阅读区宽度的 18% 夹紧后写进 --reader-margin
+     （见 applySettings）。手机上把「页边距」拉到 140 时，360 宽的屏只剩 80px 正文 ——
+     一行 5 个字（用户截图：「文本小说文字范围怎么变这么窄」）。 */
+  padding:calc(24px + 44px) var(--reader-margin) calc(30px + 64px);
+  background:var(--reader-bg);
+}
+.page-layer.active,.scroll-layer.active{display:block}
+.scroll-layer{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.scroll-layer::-webkit-scrollbar{width:0}
+
+.page-text,.scroll-inner{
+  height:100%;width:100%;
+  font-family:var(--reader-family);
+  font-size:var(--reader-font);
+  line-height:var(--reader-line);
+  letter-spacing:var(--reader-letter);
+  color:var(--reader-fg);
+  font-weight:var(--reader-weight);
+  text-align:var(--reader-align);
+  text-align-last:var(--reader-align-last, auto);
+  text-justify:inter-character;
+  word-break:break-word;
+}
+.page-text p,.scroll-inner p{margin:0;padding-bottom:var(--reader-para)}
+.page-text p.first,.scroll-inner p.first{padding-top:2px}
+/* 竖向卷轴里每页一个固定高度盒：作为手写笔迹的「按页归一化」锚点，
+   高度=内容区高度，与横向分页的正文盒一致，使上下/左右两种形态笔迹互通 */
+.scroll-inner .txt-page{width:100%;box-sizing:border-box;overflow:visible}
+/* 富文本翻页模式：把 .html-book 的顶层块切成「一屏一页」的 .html-page */
+.scroll-inner .html-page{width:100%;box-sizing:border-box;overflow:visible}
+/* scroll-padding-top 必须等于 .scroll-layer 的 padding-top(24+44=68px 顶栏)：
+   否则 scroll-snap 会把每页顶边吸附到滚动容器最顶(y=0)，
+   也就是吸附到顶栏背后 → 翻页后第一行正文被顶栏盖住（「看不到最上面」）。 */
+.scroll-layer.html-paged{scroll-snap-type:y proximity;scroll-padding-top:calc(24px + 44px);-webkit-overflow-scrolling:touch}
+.scroll-layer.html-paged .html-page{scroll-snap-align:start}
+/* 翻页模式下，单页可能比一屏高（大图/长段）：图片按「本页真实高度」缩放。
+   以前写死 calc(100vh - 96px)，viewport 高 800 时算出 704px，
+   而实际可视内容区只有 600px → 图还是把页撑爆、页里又出现滚动条。
+   --page-h 由 layoutHtmlPages() 写入（= 可视内容区高度），再留 18% 给图注。 */
+.scroll-layer.html-paged .html-book img{max-height:calc(var(--page-h,100vh) * .82);width:auto;max-width:100%;object-fit:contain;margin-left:auto;margin-right:auto}
+.page-text .mk,.scroll-inner .mk{border-radius:2px;cursor:pointer}
+.page-text .hl,.scroll-inner .hl{background:rgba(255,214,0,.45)}
+.page-text .hl.note,.scroll-inner .hl.note{border-bottom:2px solid var(--note-color,var(--ios-orange))}
+.page-text .mk-bold,.scroll-inner .mk-bold{font-weight:800}
+.page-text .mk-underline,.scroll-inner .mk-underline{padding-bottom:1px}
+/* 带笔记的标记：底部一道更粗的强调色横条 + 右上角小圆点（与自选色划线区分开）。
+   强调色由 JS 写了 --note-color（默认橙，高光本身是橙黄系时自动换紫罗兰）。 */
+.page-text .mk.note,.scroll-inner .mk.note{box-shadow:inset 0 -2.5px 0 0 var(--note-color,var(--ios-orange))}
+.page-text .mk.note::after,.scroll-inner .mk.note::after{
+  content:'';display:inline-block;width:5px;height:5px;border-radius:50%;
+  background:var(--note-color,var(--ios-orange));margin-left:2px;vertical-align:super}
+.page-text .sr,.scroll-inner .sr{background:#FFE066;outline:1px solid #E0A800}
+
+/* 富文本（EPUB / HTML / Word / .doc 转换）渲染区：
+   字体/字号/行距/字间距/颜色/对齐/字重全部继承 .scroll-inner 的阅读主题变量，
+   这里只补齐图片 / 表格 / 链接 / 标题的版式。 */
+.html-book{word-break:break-word;overflow-wrap:break-word;text-align:var(--reader-align);text-align-last:var(--reader-align-last, auto);text-justify:inter-character}
+.html-book img{max-width:100%;height:auto;display:block;margin:12px auto}
+.html-book figure{margin:12px 0;text-align:center}
+.html-book figcaption{font-size:.85em;opacity:.7;margin-top:4px}
+.html-book table{border-collapse:collapse;width:100%;margin:14px 0;font-size:.95em;
+  background:rgba(128,128,128,.06)}
+.html-book caption{caption-side:top;font-size:.85em;opacity:.7;margin-bottom:4px;text-align:left}
+.html-book th,.html-book td{border:1px solid rgba(128,128,128,.45);padding:6px 8px;
+  text-align:left;vertical-align:top}
+.html-book th{font-weight:700;background:rgba(128,128,128,.12)}
+.html-book a{color:var(--ios-blue);text-decoration:underline}
+.html-book a:visited{color:var(--ios-purple,#5856D6)}
+.html-book h1,.html-book h2,.html-book h3,.html-book h4,.html-book h5,.html-book h6{line-height:1.3;margin:1.3em 0 .5em;font-weight:700}
+.html-book h1{font-size:1.55em;margin-top:.4em}
+.html-book h2{font-size:1.32em}
+.html-book h3{font-size:1.14em}
+.html-book h4{font-size:1.04em}
+.html-book h5{font-size:.98em}
+.html-book h6{font-size:.94em;opacity:.85}
+.html-book h1:first-child,.html-book h2:first-child,.html-book h3:first-child{margin-top:.2em}
+/* Markdown 导入（R57）：笔记类文件里的元素 */
+.html-book .md-hr{border:0;border-top:1px solid rgba(128,128,128,.35);margin:1.2em 0}
+.html-book .md-pre{margin:0 0 var(--reader-para,1em);padding:10px 12px;border-radius:8px;
+  background:rgba(120,120,128,.12);overflow:auto;font-size:.9em;line-height:1.5}
+.html-book .md-pre code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre}
+.html-book .md-code{padding:1px 4px;border-radius:4px;background:rgba(120,120,128,.16);
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em}
+.html-book .md-img{display:inline-block;padding:1px 7px;margin:1px 0;border-radius:5px;
+  background:rgba(120,120,128,.14);color:var(--ios-label2,#666);font-size:.9em}
+.html-book .md-link{color:var(--ios-blue);border-bottom:1px dashed rgba(25,113,194,.55)}
+.html-book .md-mark{background:var(--md-mark,rgba(255,214,10,.35));color:inherit;padding:0 1px;border-radius:2px}
+.html-book .md-table td,.html-book .md-table th{text-align:left}
+.html-book p{margin:0 0 var(--reader-para,1em);padding:0}
+.html-book ul,.html-book ol{margin:0 0 var(--reader-para,1em);padding-left:1.5em;list-style-position:inside}
+.page-text ul,.page-text ol,.scroll-inner ul,.scroll-inner ol{list-style-position:inside;padding-left:1.5em}
+.html-book blockquote{margin:1em 0;padding:.4em 1em;border-left:3px solid rgba(128,128,128,.5);
+  opacity:.92}
+/* 富文本高光 / 标记（paintHtmlHighlights 生成）
+   五种样式**互不抢属性**：高亮=底色、下划线=内阴影、删除线/波浪线=背景多层（可叠加）、粗体=字重。
+   颜色变量 --c-hl / --c-ul 由 JS 按「该样式最新的那条标注」写入，互不串色。
+   ⚠️ 别再用 text-decoration 画删除线/波浪线 —— 它俩共用 `text-decoration-line` 单值属性，
+      同时加会互相顶掉（用户实测「波浪线和删除线互斥」）。 */
+.html-book mark.ink-hl{background-color:transparent;color:inherit;border-radius:2px;padding:0 1px}
+.html-book mark.ink-hl.hl-highlight{background-color:var(--c-hl,rgba(255,214,0,.42))}
+.html-book mark.ink-hl.hl-underline{box-shadow:inset 0 -2px 0 0 var(--c-ul,#1C7ED6)}
+/* 带笔记时底边被橙色笔记条占了：下划线整体上移 2px，两条线各自可见（不然下划线被盖住） */
+.html-book mark.ink-hl.has-note.hl-underline{box-shadow:inset 0 -4px 0 -2px var(--c-ul,#1C7ED6)}
+.html-book mark.ink-hl.hl-bold{font-weight:800}
+/* 笔记标记：底部一道 2.5px 实心强调条 + 左侧竖条 + 右上角小圆点，和用户自选色的高亮/划线明确区分
+   （模仿 txt 的 .mk.note 的粗底条；强调色由 JS 写 --note-color，默认橙，高光本身橙黄系时换紫罗兰）。
+   不用 background-image，避免盖掉删除线/波浪线的多层背景。 */
+.html-book mark.ink-hl.has-note{
+  border-bottom:2.5px solid var(--note-color,#FF9F0A);
+  border-left:3px solid var(--note-color,#FF9F0A);
+  padding:0 1px 2px 3px;
+  border-radius:3px}
+.html-book mark.ink-hl.has-note::after{
+  content:'';display:inline-block;width:5px;height:5px;border-radius:50%;
+  background:var(--note-color,#FF9F0A);margin-left:2px;vertical-align:super}
+.html-book hr{border:none;border-top:1px solid var(--ios-separator,#ccc);margin:1.4em 0}
+.html-book pre,.html-book code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:.92em;white-space:pre-wrap;word-break:break-word}
+.html-book pre{background:rgba(128,128,128,.1);padding:10px 12px;border-radius:8px;overflow-x:auto}
+
+#pdfLayer{display:none;flex-direction:column;align-items:flex-start;overflow-y:auto;overflow-x:auto;
+  padding:52px 16px 68px;-webkit-overflow-scrolling:touch;gap:10px}
+#pdfLayer.active{display:flex}
+.pdf-stack{display:flex;flex-direction:column;align-items:center;gap:10px;
+  width:max-content;min-width:100%;margin:0 auto;position:relative}
+/* 放大 >100% 时页面比容器宽：#pdfLayer 横向滚动 + margin:0 auto（溢出时自动变 0，左边缘可滚到），
+   别用 align-items:center 把页面顶到负偏移，否则左边的字永远滚不回来 */
+.pdf-page{display:block;max-width:none;box-shadow:0 3px 18px rgba(0,0,0,.18);background:#fff}
+/* PDF 文字层：透明可选中文字叠在画布上，实现划词/复制/查词；pen 模式下被 inkCanvas(z60) 覆盖不影响手写。
+   层本身 pointer-events:none（空白处点击仍能翻页/唤出工具栏），仅文字 span 接收事件（划词选中） */
+/* PDF 页下译文（双语对照）：PDF 没有段落节点，译文整块接在该页画布下方 */
+.pdf-tr-block{width:100%;max-width:100%;box-sizing:border-box;margin:0 0 10px;padding:12px 16px;
+  background:rgba(25,113,194,.07);border-left:3px solid #1971C2;border-radius:8px;
+  font-size:15px;line-height:1.75;color:var(--fg,#222);text-align:left}
+.pdf-tr-block p{margin:0 0 .55em}
+.pdf-tr-block p:last-child{margin-bottom:0}
+.pdf-text-layer{position:absolute;color:transparent;pointer-events:none;user-select:text;-webkit-user-select:text;z-index:2}
+.pdf-text-layer span{position:absolute;color:transparent;white-space:pre;transform-origin:left top;pointer-events:auto}
+/* 划词选中色：PDF 文字层**关掉原生选区底色**（原来只有浏览器默认的浅灰，看着像“划不动”）。
+   ⚠️ R58：原生 ::selection 是「一个 span 一块」按各自行盒画 —— PDF 里同一行常被 pdf.js 拆成
+   好几个字号/基线都略有差别的 span（实测「1.」top=220、「你好」top=219），选中跨 span 时
+   两块蓝底上下错开 1~8px、还叠在一起，就是用户反复说的「划词重叠」（和高光标记无关）。
+   改为透明 + 自绘 `.pdf-sel-ov` 整行带子（见 paintPdfSelection）。 */
+.pdf-text-layer span::selection{background:transparent}
+.pdf-text-layer span::-moz-selection{background:transparent}
+/* 自绘划词带：按行合并、按 x 相邻合并，永远是一块整齐的矩形 */
+.pdf-sel-ov{position:absolute;background:rgba(10,132,255,.26);border-radius:2px;
+  pointer-events:none;z-index:1}
+
+/* PDF 标记带（高亮 / 下划线 / 删除线 / 波浪线）：独立图层铺在文字层里，pointer-events:none 不挡划词。
+   画在 span 背景上会残留（删除标注后高光不消失）、且被 scaleX 压扁，故改为按 Range 真实矩形画带子。 */
+.pdf-hl-layer{position:absolute;left:0;top:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.pdf-hl-band{position:absolute;pointer-events:none;border-radius:2px}
+/* 有笔记的 PDF 标记：右上角一个小圆点（和 txt 的 .mk.note 同一套语言） */
+.pdf-note-dot{position:absolute;width:6px;height:6px;border-radius:50%;pointer-events:none;
+  box-shadow:0 0 0 1.5px #fff,0 1px 2px rgba(0,0,0,.25);z-index:2}
+/* 标记命中区（整块字身盒，透明）：只用于坐标反查 —— 点文字本身就能打开标记面板，
+   不必精确点中 2px 的下划线；粗体没有带子，也靠它命中。 */
+.pdf-hit{position:absolute;background:transparent;pointer-events:none;border-radius:2px}
+/* PDF「加粗」叠层：由 paintPdfBold 把画布像素膨胀后画在这里（见 reader.js 说明） */
+canvas.pdf-bold-layer{position:absolute;left:0;top:0;width:100%;height:100%;
+  pointer-events:none;z-index:0}
+
+/* PDF 扫描页角标：透明全页层不挡阅读/划词，仅右上角小标可点（修 #5：OCR 控制移进抽屉） */
+.pdf-scan-mark{position:absolute;z-index:3;display:block;pointer-events:none;background:none}
+.pdf-scan-mark .pdf-scan-badge{position:absolute;top:0;right:0;pointer-events:auto;border:none;cursor:pointer;
+  background:rgba(28,28,30,.82);color:#fff;font-size:12px;font-weight:600;
+  padding:4px 10px;border-radius:0 0 0 10px;box-shadow:0 2px 8px rgba(0,0,0,.28)}
+.pdf-scan-mark .pdf-scan-badge:active{transform:scale(.96)}
+
+/* PDF OCR 抽屉面板（控制从阅读页移到侧栏，修 #5） */
+.ocr-panel{padding:10px 12px}
+.ocr-status{font-size:14px;color:var(--ov-fg,var(--fg,#333));margin-bottom:10px;min-height:20px}
+.ocr-row{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.ocr-row .btn-primary,.ocr-row .btn-plain{flex:0 0 auto}
+/* 这两个按钮靠 hidden 属性控制显隐；.btn-plain 自己带 display，不加这条 hidden 不生效 */
+.ocr-row [hidden]{display:none!important}
+.ocr-pages-input{flex:1;min-width:0;padding:8px 10px;border:1px solid var(--ov-line,rgba(128,128,128,.4));
+  border-radius:8px;font-size:13px;background:var(--ov-field-2,var(--reader-bg,#fff));color:var(--ov-fg,var(--fg,#222))}
+.ocr-progress{height:8px;background:rgba(128,128,128,.2);border-radius:6px;overflow:hidden;margin-bottom:10px}
+.ocr-progress-bar{height:100%;width:0;background:var(--ov-accent,#1971C2);transition:width .2s}
+.ocr-tip{font-size:12px;color:var(--ov-fg-dim,rgba(128,128,128,.95));line-height:1.6}
+
+/* 下载本地识别模型的弹窗（R124）：和「安装本地翻译引擎」对齐 ——
+   先摊开落点 / 占用 / 剩余空间，再让用户决定；下载中可以取消、可以转后台。 */
+.ocr-inst-mask{position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:10000;
+  display:flex;align-items:center;justify-content:center;padding:16px}
+.ocr-inst{position:relative;width:380px;max-width:100%;max-height:calc(100vh - 32px);overflow:auto;
+  background:var(--ov-card,#fff);color:var(--ov-fg,var(--fg,#1c1c1e));
+  border-radius:14px;padding:16px 16px 14px;box-shadow:0 18px 50px rgba(0,0,0,.28)}
+.ocr-inst h3{margin:0 26px 10px 0;font-size:15px;font-weight:600}
+.ocr-inst-x{position:absolute;top:8px;right:8px;width:28px;height:28px;border:0;border-radius:8px;
+  background:transparent;color:var(--ov-fg-dim,#8e8e93);font-size:18px;line-height:1;cursor:pointer}
+.ocr-inst-x:hover{background:var(--ov-hover,rgba(128,128,128,.14))}
+.ocr-inst-x[hidden]{display:none!important}
+.ocr-inst-body{font-size:12.5px;line-height:1.75}
+.ocr-inst-body b{font-weight:600;color:var(--ov-accent,var(--ios-blue))}
+.ocr-inst-path{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;
+  color:var(--ov-fg,var(--fg));word-break:break-all;background:var(--ov-field,rgba(128,128,128,.12));
+  padding:1px 5px;border-radius:5px}
+.ocr-inst-warn{color:var(--ov-red,#d70015)}
+.ocr-inst-log{margin-top:9px;padding:7px 8px;border-radius:8px;font-size:10.5px;line-height:1.55;
+  font-family:ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-all;
+  max-height:72px;overflow:auto;background:var(--ov-field-2,rgba(128,128,128,.18));
+  color:var(--ov-fg-dim,#6c6c70)}
+.ocr-inst-note{margin-top:9px;padding:8px 9px;border-radius:8px;font-size:11.5px;line-height:1.6;
+  background:var(--ov-field,rgba(128,128,128,.12));color:var(--ov-fg-dim,#6c6c70)}
+.ocr-inst-note b{color:inherit;font-weight:600}
+/* 下载中的「关窗不中断」提示：要比普通说明更显眼，否则用户还是不敢关 */
+.ocr-inst-note-key{background:var(--ov-accent-weak,rgba(0,122,255,.12));
+  color:var(--ov-fg,var(--fg))}
+.ocr-inst-prog{margin-top:12px}
+.ocr-inst-prog[hidden]{display:none!important}
+.ocr-inst-bar{height:8px;border-radius:6px;overflow:hidden;background:var(--ov-field,rgba(128,128,128,.2))}
+.ocr-inst-fill{height:100%;width:0;background:var(--ov-accent,var(--ios-blue));transition:width .25s}
+.ocr-inst-meta{display:flex;justify-content:space-between;gap:8px;margin-top:6px;font-size:11px;
+  color:var(--ov-fg-dim,#8e8e93)}
+.ocr-inst-acts{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
+.ocr-inst-acts .btn-primary,.ocr-inst-acts .btn-plain{flex:0 0 auto}
+.ocr-inst-acts [hidden]{display:none!important}
+/* 浮层里的按钮不能吃 --lib-*（那是书架的颜色），要跟弹窗一起走 --ov-* */
+.ocr-inst .btn-plain{background:var(--ov-field,rgba(128,128,128,.14));color:var(--ov-fg,var(--fg))}
+.ocr-inst .btn-primary{background:var(--ov-accent,var(--ios-blue));color:var(--ov-accent-fg,#fff)}
+.ocr-hint{font-size:12px;color:var(--ov-fg-dim,rgba(128,128,128,.95));margin:-4px 0 10px;line-height:1.5}
+.ocr-keep{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ov-fg,var(--fg,#333));cursor:pointer}
+/* OCR 语言 / 排版方向（R121）：抽屉顶上两排小胶囊，点一下就切换 */
+.ocr-sec{margin:0 0 10px}
+.ocr-sec-t{font-size:12px;font-weight:600;color:var(--ov-fg,var(--fg,#333));margin:0 0 6px;display:flex;gap:6px;align-items:baseline}
+.ocr-sec-h{font-weight:400;font-size:11px;color:var(--ov-fg-dim,rgba(128,128,128,.95));cursor:help}
+.ocr-chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.ocr-chip{font:inherit;font-size:13px;line-height:1;padding:8px 11px;border-radius:999px;
+  border:1px solid var(--ov-line,rgba(128,128,128,.35));background:transparent;color:var(--ov-fg,var(--fg,#333));
+  cursor:pointer;-webkit-tap-highlight-color:transparent}
+.ocr-chip.on{background:var(--ov-accent,#1971C2);border-color:transparent;color:#fff;font-weight:600}
+.ocr-chip:active{transform:scale(.96)}
+.ocr-cur{font-size:12px;color:var(--ov-fg-dim,rgba(128,128,128,.95));margin:-2px 0 8px}
+/* 识别结果预览：让用户能确认「真的认出来了什么」，而不是只看到一个转圈 */
+.ocr-preview{max-height:200px;overflow:auto;border:1px solid var(--ov-line,rgba(128,128,128,.25));border-radius:8px;
+  padding:8px 10px;margin-bottom:10px;background:var(--ov-field,rgba(128,128,128,.06))}
+.ocr-preview-row{font-size:12px;line-height:1.6;color:var(--ov-fg,var(--fg,#333));word-break:break-word;margin-bottom:4px}
+/* 「显示文字层」：把透明文字层显示出来（核对 OCR / 数字版是否认对）
+   ⚠️ 不给每个 span 画 outline —— 一段话有几十个 span，一格格蓝框和「划词选区」的蓝叠在一起，
+      用户会看到「两层蓝」。改成极淡白底 + 整层一条淡蓝外框。
+   R53：数字版层和 OCR 层共用同一个 .show-text（顶部 A 按钮与 OCR 抽屉勾选框是同一个开关），
+   只是 OCR 层白底更实一点，方便区分。 */
+.pdf-text-layer.show-text{box-shadow:0 0 0 1px rgba(25,113,194,.28);border-radius:2px}
+.pdf-text-layer.show-text span{color:#111 !important;background:rgba(255,255,255,.55);text-shadow:none}
+.pdf-text-layer.ocr-layer.show-text span{background:rgba(255,255,255,.68)}
+/* R126：图片书点 A 之后必须**不透明**。
+   底图上本来就印着字，半透明白底会让原字透上来，和识别出来的字错位叠在一起 ——
+   看着就是「糊的」（R126 用户原话：「点A，是糊的」）。
+   盖成实底只剩识别结果，才真的能核对认对了没有。 */
+.pdf-text-layer.img-ocr-layer.show-text span{background:#fff;border-radius:1px}
+/* OCR 抽屉里的「第 N 页」行（R55 重做）：
+   点行本体 = 展开/收起这一页识别出的文字（核对用）；
+   点行首 👁 = 跳到这一页并开/关页面上的文字层（.on = 这一页的文字层正在显示）。 */
+.ocr-preview-row{cursor:pointer;border-radius:6px;padding:3px 5px}
+.ocr-preview-row:hover{background:var(--ov-hover,rgba(25,113,194,.06))}
+.ocr-preview-row.on{background:var(--ov-accent-soft,rgba(25,113,194,.12))}
+.ocr-preview-row .opr-head{display:flex;align-items:center;gap:6px}
+.ocr-preview-row .opr-eye{flex:0 0 auto;width:16px;text-align:center;opacity:.45;cursor:pointer}
+.ocr-preview-row .opr-eye:hover{opacity:1}
+.ocr-preview-row.on .opr-eye{opacity:1}
+.ocr-preview-row .opr-caret{margin-left:auto;padding-left:6px;opacity:.5}
+/* 识别置信度（R122）：低于 62% 标红 + ⚠️，一眼就能看出这页其实是乱码 */
+.ocr-preview-row .opr-q{font-size:11px;padding:1px 5px;border-radius:999px;
+  background:rgba(128,128,128,.16);color:var(--ov-fg-dim,rgba(128,128,128,.95))}
+.ocr-preview-row .opr-q.bad{background:rgba(229,57,53,.16);color:#E53935;font-weight:600}
+.ocr-preview-row .opr-text{margin:3px 0 2px 22px;padding:5px 7px;border-radius:6px;
+  background:var(--ov-field-2,rgba(120,120,128,.12));color:var(--ov-fg,var(--fg,#222));max-height:130px;overflow:auto;
+  white-space:pre-wrap;word-break:break-word;-webkit-user-select:text;user-select:text}
+/* 「A」文字层开关的选中态 */
+.pz-btn.pz-text{font-weight:700}
+.pz-btn.pz-text.on{background:#1971C2;color:#fff}
+
+/* PDF 缩放 / 适应屏幕浮动控件（仅 PDF 显示） */
+.pdf-zoom-ctl{position:absolute;right:12px;bottom:74px;z-index:120;display:flex;flex-direction:column;
+  gap:6px;background:rgba(28,28,30,.82);border-radius:14px;padding:6px;backdrop-filter:blur(6px);
+  box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.pdf-zoom-ctl .pz-btn{width:42px;height:42px;border:none;background:transparent;color:#fff;
+  font-size:18px;line-height:1;border-radius:10px;cursor:pointer}
+.pdf-zoom-ctl .pz-btn:active{background:rgba(255,255,255,.18)}
+.pdf-zoom-ctl .pz-fit{font-size:11px;height:auto;padding:7px 4px;display:flex;flex-direction:column;
+  align-items:center;gap:2px;line-height:1.1}
+.pdf-zoom-ctl .pz-fit #pdfZoomVal{font-size:10px;opacity:.8}
+#imgLayer{display:none;align-items:flex-start;justify-content:center;padding:52px 10px 68px;gap:4px;-webkit-user-select:none;user-select:none}
+#imgLayer.active{display:flex}
+#imgPage{max-width:100%;max-height:100%;object-fit:contain;user-select:none;-webkit-user-drag:none}
+
+/* 漫画适配模式（设置里可切换）
+   contain 整页（默认，整张塞进屏幕）
+   width   适应宽度（宽度铺满，长图可上下滚）
+   height  适应高度（高度铺满，宽图可左右滚）
+   cover   填满裁切（铺满不留边，会裁掉边缘）
+   --z 为图片缩放系数（comicZoom，默认 1），所有适配模式都乘上它，
+   放大后可借助分页层的 overflow:auto 拖动看细节，缩小可看整页全局。 */
+#imgLayer{--z:1}
+.comic-img{user-select:none;-webkit-user-drag:none}
+/* 图片书 OCR 文字层（R118）：和 PDF 扫描页同一个 .pdf-text-layer，只是底图从 canvas 换成 <img>。
+   ⚠️ #imgLayer 本身写着 user-select:none（防止拖图选中 alt 文字），文字层要能划词就必须把
+   整层的 user-select 放开 —— 只给 .pdf-text-layer 设不管用（Chromium 里祖先 none 会吃掉子级）。
+   只在「真的建了层」时才加 has-ocr，没识别过的书行为一点不变。 */
+#imgLayer.has-ocr{user-select:text;-webkit-user-select:text}
+/* 图片书文字层的两层结构（R122）：
+   .img-ocr-wrap = 与 <img> 元素盒同大小 + overflow:hidden，只负责定位和裁切。
+     cover（填满裁切）时内容盒比元素盒大一圈，超出的那圈必须裁掉，
+     否则文字层会溢出到图片外面、分页模式还会把容器撑出滚动条。
+   .img-ocr-layer = 图片内容盒（contain 时比元素盒小、cover 时更大），偏移写在自身 left/top。
+   滚动 / 缩放 / 换 fit 都只改这两层的坐标，不重建 DOM。 */
+#imgLayer .img-ocr-wrap{position:absolute;overflow:hidden;pointer-events:none;z-index:2}
+#imgLayer .img-ocr-layer{position:absolute;pointer-events:auto}
+#imgLayer[data-fit="contain"] .comic-img{width:calc(100% * var(--z));height:calc(100% * var(--z));max-width:none;max-height:none;object-fit:contain}
+#imgLayer[data-fit="width"]{align-items:flex-start;overflow-y:auto}
+#imgLayer[data-fit="width"] .comic-img{width:calc(100% * var(--z));height:auto;max-height:none;object-fit:contain}
+/* 连续卷轴模式：图片纵向堆叠、按宽度适应（修 #7：之前缺这条规则，图片按自然像素尺寸横向排布，顶部几张错位/看不见） */
+#imgLayer[data-fit="scroll"]{flex-direction:column;align-items:stretch;justify-content:flex-start;overflow-y:auto}
+#imgLayer[data-fit="scroll"] .comic-img{width:calc(100% * var(--z));height:auto;max-height:none;object-fit:contain;margin:0 auto;display:block}
+#imgLayer[data-fit="height"]{overflow-x:auto}
+#imgLayer[data-fit="height"] .comic-img{height:calc(100% * var(--z));width:auto;max-width:none;object-fit:contain}
+#imgLayer[data-fit="cover"] .comic-img{width:calc(100% * var(--z));height:calc(100% * var(--z));object-fit:cover}
+/* 双页时每页最多占一半，避免两张都被压扁（缩放同样乘 --z） */
+#imgLayer[data-spread="true"] .comic-img{max-width:calc(50% * var(--z));flex:0 1 calc(50% * var(--z))}
+/* 分页模式下放大后需要能拖动看细节：开 overflow 让超出部分可滚（100% 时不溢出、无滚动条） */
+#imgLayer.active[data-mode="paged"]{overflow:auto}
+/* 分页模式：单页/双页图片用上下 auto 外边距垂直居中；放大到超出视口时 auto 边距自动塌缩为 0，
+   图片顶到顶部、可滚动看完，避免 align-items:center 在溢出时把顶部切掉、翻不到最上。 */
+#imgLayer.active[data-mode="paged"] .comic-img{margin-top:auto;margin-bottom:auto}
+
+/* 连续卷轴（条漫）：整本拼成一条长卷往下滚，一页接一页。
+   注意必须带 .active：#imgLayer[data-mode="scroll"] 的特异性高于 #imgLayer{display:none}，
+   不加点 .active 的话切到小说/PDF 后漫画层会一直盖在上面。 */
+#imgLayer.active[data-mode="scroll"]{
+  display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;
+  /* 顶部 72px / 底部 72px 留出阅读顶栏(68px)与底栏(58px)空间，否则条漫第一页顶部、
+     最后一页底部会被顶栏/底栏盖住，表现为「挤掉一部分、翻不到最上面」。
+     注意：top-bar 实际高 68px（height:44 + padding-top:24），所以 padding-top 必须 ≥ 72，
+     之前写 52 会导致首图顶部被切、滚不到最上。 */
+  padding:72px 8px 72px;gap:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+}
+#imgLayer.active[data-mode="scroll"] .comic-img{
+  width:calc(100% * var(--z));height:auto;max-width:none;max-height:none;object-fit:contain;display:block;
+}
+
+/* 画布：show=显示笔迹，active=接收手写输入 */
+.ink-canvas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:60;display:none;pointer-events:none;touch-action:none}
+.ink-canvas.show{display:block}
+.ink-canvas.active{pointer-events:auto;cursor:crosshair}
+
+/* 点击区：仅作视觉参考，不再拦截事件（否则无法选中文字） */
+.tap-zones{position:absolute;inset:44px 0 58px;display:none;z-index:40;pointer-events:none}
+.tap-zone{pointer-events:none}
+
+/* 顶栏 / 底栏 */
+.reader-bar{
+  position:absolute;left:0;right:0;z-index:80;
+  background:rgba(250,250,250,.94);backdrop-filter:blur(20px);
+  color:#111;display:flex;align-items:center;gap:8px;padding:0 14px;
+  transition:transform .24s ease,opacity .24s ease;
+}
+.reader-bar.dark{background:rgba(28,28,30,.94);color:#F2F2F7}
+.top-bar{top:0;height:44px;padding-top:24px;height:68px;align-items:flex-end;padding-bottom:6px;border-bottom:.5px solid rgba(0,0,0,.12)}
+.top-bar.dark{border-bottom-color:rgba(255,255,255,.14)}
+.bottom-bar{bottom:0;height:58px;border-top:.5px solid rgba(0,0,0,.12)}
+.bottom-bar.dark{border-top-color:rgba(255,255,255,.14)}
+.reader-bar.hidden-up{transform:translateY(-100%);opacity:0}
+.reader-bar.hidden-down{transform:translateY(100%);opacity:0}
+.bar-btn{
+  padding:6px 11px;border-radius:8px;font-size:14px;color:inherit;white-space:nowrap;
+}
+.bar-btn:hover{background:rgba(0,0,0,.07)}
+.reader-bar.dark .bar-btn:hover{background:rgba(255,255,255,.13)}
+.bar-btn.on{background:var(--ios-blue);color:#fff}
+.bar-btn.playing{background:var(--ios-green);color:#fff;font-weight:600;font-variant-numeric:tabular-nums}
+/* 后台翻译中（叉掉小窗后仍在跑）：按钮亮起来带进度，点一下回面板就能停止 */
+.bar-btn.busy{background:var(--ios-blue);color:#fff;font-weight:600;font-variant-numeric:tabular-nums}
+.bar-title{
+  flex:1;text-align:center;font-size:15px;font-weight:600;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 10px;opacity:.85;
+}
+.bar-actions{display:flex;gap:2px}
+.bar-actions .bar-btn{font-size:13.5px}
+.bar-divider{width:1px;height:22px;background:rgba(0,0,0,.14);margin:0 4px}
+
+.progress-wrap{flex:1;display:flex;align-items:center;gap:10px;min-width:120px}
+.page-label{font-size:12px;font-variant-numeric:tabular-nums;opacity:.75;min-width:70px;text-align:right}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;flex:1;height:4px;border-radius:2px;
+  background:rgba(0,0,0,.16);outline:none;
+}
+.reader-bar.dark input[type=range]{background:rgba(255,255,255,.26)}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#fff;
+  box-shadow:0 1px 4px rgba(0,0,0,.3);cursor:pointer;
+}
+.speed-wrap{display:flex;align-items:center;gap:7px;min-width:150px}
+.speed-txt{font-size:12px;opacity:.7}
+.speed-val{font-size:12px;font-variant-numeric:tabular-nums;min-width:28px;opacity:.8}
+
+/* 抽屉 */
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.35);z-index:100;opacity:0;pointer-events:none;transition:opacity .24s}
+.scrim.show{opacity:1;pointer-events:auto}
+.drawer{
+  position:absolute;top:0;bottom:0;width:336px;background:var(--ov-bg,var(--ios-bg));z-index:110;
+  color:var(--ov-fg,var(--ios-label));
+  display:flex;flex-direction:column;transition:transform .28s cubic-bezier(.32,.72,0,1);
+  box-shadow:0 0 40px rgba(0,0,0,.22);
+}
+.drawer-left{left:0;transform:translateX(-100%)}
+.drawer-right{right:0;transform:translateX(100%)}
+.drawer.show{transform:translateX(0)}
+.drawer-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:34px 16px 10px;border-bottom:.5px solid var(--ov-line,var(--ios-separator));
+}
+.drawer-head h3{margin:0;font-size:17px;font-weight:600;color:var(--ov-fg,var(--ios-label))}
+.drawer-close{color:var(--ov-accent,var(--ios-blue));font-size:15px;font-weight:600}
+.drawer-body{flex:1;overflow-y:auto;padding:8px 0 30px;overflow-anchor:none}
+
+.list-item{
+  padding:11px 18px;border-bottom:.5px solid var(--ov-line,var(--ios-separator));cursor:pointer;
+  display:flex;gap:10px;align-items:flex-start;font-size:14.5px;line-height:1.45;
+}
+.list-item:hover{background:var(--ov-hover,var(--ios-gray6))}
+.list-item .li-main{flex:1;min-width:0}
+.list-item .li-sub{font-size:12px;color:var(--ov-fg-dim,var(--ios-gray));margin-top:3px}
+.list-item .li-del{color:var(--ov-red,var(--ios-red));font-size:13px;padding:2px 5px;flex:0 0 auto}
+.list-item .li-acts{display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex:0 0 auto}
+.list-item .li-fix{color:var(--ov-accent,var(--ios-blue));font-size:13px;padding:2px 5px;border:.5px solid var(--ov-accent,var(--ios-blue));border-radius:6px;white-space:nowrap}
+.list-item.is-broken{background:rgba(255,59,48,.06)}
+.list-item .li-badge{
+  display:inline-block;margin-left:6px;padding:0 6px;border-radius:5px;
+  background:rgba(255,59,48,.14);color:var(--ios-red);font-size:11.5px;font-weight:600;
+}
+/* 目录拖拽：拖动标题行到另一项上 = 成为它的子节点 */
+.ci-title{cursor:grab;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.chapter-item.toc-dragging{opacity:.45}
+.chapter-item.toc-drop{background:rgba(25,113,194,.10);box-shadow:inset 0 0 0 2px #1971C2;border-radius:8px}
+body.toc-dragging-body{cursor:grabbing;user-select:none;-webkit-user-select:none}
+
+.mk-broken{
+  outline:1px dashed var(--ios-red);outline-offset:2px;border-radius:2px;opacity:.72;
+}
+.chapter-item{padding:11px 18px 11px calc(18px + (var(--d,1) - 1) * 15px);border-bottom:.5px solid var(--ov-line,var(--ios-separator));cursor:pointer;font-size:14.5px;line-height:1.4;display:flex;align-items:center;gap:8px}
+.chapter-item:hover{background:var(--ov-hover,var(--ios-gray6))}
+.chapter-item.lv1{font-weight:600}
+.chapter-item.lv2{color:var(--ov-fg-dim,var(--ios-label2))}
+/* R55：以前只给 lv1~lv3 写了缩进，第 4 级往下全退回「无缩进 + 正常字号」→
+   看着和顶级一样（用户：「只能对 3 级，再后面就不对了」）。缩进改成按 --d 计算，
+   任意深度都成立；这里只补颜色 / 字号的递减。 */
+.chapter-item.lv3,.chapter-item.lv4,.chapter-item.lv5,.chapter-item.lv6{color:var(--ov-fg-dim,var(--ios-gray));font-size:13.5px}
+.chapter-item.current{color:var(--ov-accent,var(--ios-blue));font-weight:600}
+.chapter-item .ci-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chapter-item .ci-acts{display:flex;gap:4px;flex:0 0 auto;opacity:0;transition:opacity .12s}
+.chapter-item:hover .ci-acts{opacity:1}
+.ci-btn{border:none;background:transparent;font-size:15px;line-height:1;padding:4px 6px;border-radius:7px;cursor:pointer}
+.ci-btn:hover{background:var(--ov-hover-2,rgba(0,0,0,.08))}
+.toc-toolbar{display:flex;align-items:center;gap:10px;padding:10px 16px 12px;border-bottom:.5px solid var(--ov-line,var(--ios-separator));position:sticky;top:0;background:var(--ov-bg,var(--ios-bg));z-index:1;flex-wrap:wrap}
+/* 抽屉只有 336px，5 个按钮挤一行会把字压成竖排（实测很难看）→ 允许换行、按钮文字不折行 */
+.toc-toolbar button{white-space:nowrap;flex:0 0 auto}
+.toc-tip{font-size:12px;color:var(--ov-fg-dim,var(--ios-gray));padding:6px 16px 0}
+.toc-custom-row{display:flex;align-items:center;gap:8px;padding:8px 16px 10px;border-bottom:.5px solid var(--ov-line,var(--ios-separator));background:var(--ov-bg,var(--ios-bg))}
+.toc-custom-input{flex:1 1 auto;min-width:0;height:32px;padding:0 10px;border:1px solid var(--ov-line,var(--ios-separator));border-radius:8px;background:var(--ov-field,var(--ios-gray6));color:var(--ov-fg,var(--ios-label));font-size:13px}
+.toc-custom-input:focus{outline:none;border-color:var(--ov-accent,var(--ios-blue))}
+.toc-custom-btn{flex:0 0 auto;white-space:nowrap;color:var(--ov-accent,var(--ios-blue));border-color:var(--ov-accent,var(--ios-blue))}
+.toc-custom-help{font-size:12px;color:var(--ov-fg-dim,var(--ios-gray));padding:8px 16px 10px;line-height:1.6;background:var(--ov-field,var(--ios-gray6));border-bottom:.5px solid var(--ov-line,var(--ios-separator))}
+.toc-custom-help code{background:rgba(128,128,128,.16);border-radius:4px;padding:1px 5px;font-size:11px;color:var(--ov-fg,var(--ios-label))}
+.toc-keep{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;font-size:12px;color:var(--ov-fg,var(--ios-label));cursor:pointer;user-select:none}
+.toc-keep input{margin:0}
+.toc-hidden{display:none}
+.toc-caret{border:none;background:transparent;font-size:13px;line-height:1;width:18px;flex:0 0 auto;cursor:pointer;color:var(--ov-accent,var(--ios-blue))}
+.toc-caret-spacer{width:18px;flex:0 0 auto;display:inline-block}
+.toc-check{width:17px;height:17px;flex:0 0 auto;cursor:pointer}
+/* #23 drill-down 层级导航：祖先面包屑 + 上一层 */
+.toc-breadcrumb{display:flex;align-items:center;gap:2px;flex-wrap:wrap;padding:8px 16px;
+  border-bottom:.5px solid var(--ov-line,var(--ios-separator));background:var(--ov-field,var(--ios-gray6));font-size:12.5px;line-height:1.5}
+.toc-crumb{border:none;background:transparent;color:var(--ov-accent,var(--ios-blue));font-size:12.5px;padding:3px 6px;border-radius:7px;cursor:pointer;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.toc-crumb:hover{background:var(--ov-accent-soft,rgba(0,122,255,.12))}
+.toc-crumb.cur{color:var(--ov-fg,var(--ios-label));font-weight:600;cursor:default}
+.toc-crumb-sep{color:var(--ov-fg-dim,var(--ios-gray))}
+.toc-up{flex:0 0 auto;margin-left:auto;color:var(--ov-accent,var(--ios-blue));border-color:var(--ov-accent,var(--ios-blue))}
+.toc-up:disabled{color:var(--ov-fg-dim,var(--ios-gray));border-color:var(--ov-line,var(--ios-separator));opacity:.5;cursor:default}
+.toc-sel-del{color:var(--ov-red,var(--ios-red));border-color:var(--ov-red,var(--ios-red))}
+.toc-clear{margin-left:auto}
+.drawer-empty{text-align:center;color:var(--ov-fg-dim,var(--ios-gray));font-size:14px;padding:44px 20px;line-height:1.6}
+.drawer-add{
+  margin:8px 14px 4px;padding:11px;border-radius:10px;background:var(--ov-field,var(--ios-gray6));
+  color:var(--ov-accent,var(--ios-blue));font-size:14.5px;font-weight:600;text-align:center;cursor:pointer;
+}
+.drawer-add:hover{background:var(--ov-hover-2,#E8E8ED)}
+.drawer-add.remove{color:var(--ov-red,var(--ios-red))}
+
+/* 设置面板 */
+.settings-body{padding:0}
+.set-group{margin:0 0 14px}
+.set-group:first-child{padding-top:10px}
+.set-head{display:flex;align-items:center;justify-content:space-between;padding:0 20px 7px}
+.set-title{font-size:12.5px;font-weight:600;color:var(--ios-gray)}
+.set-info{
+  width:24px;height:24px;padding:0;border:none;border-radius:50%;background:transparent;
+  color:var(--ios-gray);font-size:14px;line-height:1;display:grid;place-items:center;cursor:pointer;
+  opacity:.8;-webkit-tap-highlight-color:transparent;
+}
+.set-info:active{background:var(--ios-gray6);opacity:1}
+.set-info.on{background:var(--ios-blue);color:#fff;opacity:1}
+.set-card{background:var(--ios-bg);margin:0 14px;border-radius:12px;overflow:hidden}
+.svc-status{padding:10px 12px;font-size:13px;color:var(--ios-gray);line-height:1.6}
+.svc-status b{font-weight:700}
+.set-row{
+  display:grid;grid-template-columns:76px minmax(0,1fr);align-items:center;column-gap:10px;
+  padding:10px 14px;border-bottom:.5px solid var(--ios-separator);font-size:14.5px;min-height:46px;box-sizing:border-box;
+}
+.set-row:last-child{border-bottom:none}
+.set-row>.sr-label{font-size:14px;color:var(--ios-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sr-ctl{display:flex;align-items:center;gap:8px;min-width:0;justify-content:flex-end}
+.sr-ctl>input[type=range]{flex:1;min-width:0}
+.sr-ctl>.seg-full{flex:1}
+.sr-val{flex:0 0 auto;min-width:40px;text-align:right;font-size:13px;color:var(--ios-gray);font-variant-numeric:tabular-nums}
+.set-row.col{display:flex;flex-direction:column;align-items:stretch;gap:8px}
+.set-row.col>.seg-full{width:100%}
+.set-row.btn-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.set-hint{padding:9px 14px 11px;font-size:12px;color:var(--ios-gray);line-height:1.55}
+/* R170：说明块现在排在卡片**上面**（紧贴标题），所以间距改成"下方留白" */
+.set-note{
+  display:none;margin:0 14px 9px;padding:10px 12px;border-radius:10px;
+  background:var(--ios-gray6,#F2F2F7);font-size:12px;color:var(--ios-gray);line-height:1.7;
+}
+.set-note.show{display:block}
+.set-note b{color:var(--ios-label);font-weight:600}
+input[type=color].sw{
+  width:32px;height:32px;flex:0 0 auto;padding:0;border:none;border-radius:9px;
+  background:none;-webkit-appearance:none;appearance:none;cursor:pointer;
+}
+input[type=color].sw::-webkit-color-swatch-wrapper{padding:0}
+input[type=color].sw::-webkit-color-swatch{border:1px solid rgba(0,0,0,.16);border-radius:9px}
+.theme-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+.theme-swatch{
+  height:44px;border-radius:9px;border:2.5px solid transparent;cursor:pointer;position:relative;
+  display:grid;place-items:center;font-size:11px;font-weight:600;
+}
+.theme-swatch.sel{border-color:var(--ios-blue);box-shadow:0 0 0 2px rgba(0,122,255,.25)}
+.font-chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{
+  padding:6px 12px;border-radius:16px;background:var(--ios-gray6);font-size:13.5px;cursor:pointer;
+}
+.chip.sel{background:var(--ios-blue);color:#fff;font-weight:600}
+.chip.sm{padding:5px 10px;font-size:12.5px;border-radius:14px}
+.btn-primary.sm,.btn-danger.sm{padding:7px 12px;font-size:13px;border-radius:9px}
+
+/* ---------- 标签系统 ---------- */
+.tag-bar{display:flex;flex-wrap:wrap;gap:7px;align-items:center;padding:4px 2px 12px}
+.tag-bar-label{font-size:13px;color:var(--lib-fg-dim,var(--ios-gray));margin-right:2px;flex:0 0 auto}
+.tag-clear{background:transparent;border:1px solid var(--ios-red);color:var(--ios-red);font-size:12.5px;padding:3px 10px}
+.tag-clear:hover{background:rgba(255,59,48,.08)}
+/* 标签匹配模式切换（或 OR / 且 AND） */
+.tag-mode{background:var(--lib-field,var(--ios-gray6));border:1px solid var(--lib-accent,var(--ios-blue));color:var(--lib-accent,var(--ios-blue));font-weight:600;font-size:12.5px;padding:3px 10px}
+.tag-mode.sel{background:var(--lib-accent,var(--ios-blue));color:var(--lib-accent-fg,#fff)}
+
+/* 标签编辑弹窗里的「已有标签」建议 */
+.tag-suggest{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0 2px;max-height:120px;overflow:auto}
+.tag-suggest-label{font-size:12px;color:var(--ios-gray);width:100%}
+.tag-sug{background:var(--lib-field,var(--ios-gray6));font-size:12.5px;padding:3px 10px}
+.tag-sug:hover{background:var(--lib-accent-soft-2,rgba(0,122,255,.18))}
+
+/* 书卡上的标签芯片 */
+.tag-row{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+.tag-chip{
+  display:inline-flex;align-items:center;gap:3px;
+  padding:2px 8px;border-radius:11px;font-size:11px;line-height:1.5;
+  background:var(--lib-accent-soft,rgba(0,122,255,.10));color:var(--lib-accent,var(--ios-blue));cursor:pointer;
+}
+.tag-chip:hover{background:var(--lib-accent-soft-2,rgba(0,122,255,.18))}
+.tag-row .tag-chip{cursor:pointer}
+
+/* 标签芯片也会出现在标签弹层里，而弹层在 #ipad 下、拿不到 #libraryView 上的 --lib-*，
+   会回落成 iOS 原色（深色浮层上=浅底浅字）。这里在浮层作用域里改吃 --ov-*。 */
+.sheet .tag-chip,.drawer .tag-chip{background:var(--ov-accent-soft,rgba(0,122,255,.10));color:var(--ov-accent,var(--ios-blue))}
+.sheet .tag-chip:hover,.drawer .tag-chip:hover{background:var(--ov-accent-soft-2,rgba(0,122,255,.18))}
+.sheet .tag-chip.tag-edit{background:var(--ov-accent-soft,rgba(0,122,255,.12))}
+.sheet .tag-x{color:var(--ov-accent,var(--ios-blue))}
+.sheet .tag-empty{color:var(--ov-fg-dim,var(--ios-gray))}
+.sheet .tag-sug{background:var(--ov-field,var(--ios-gray6));color:var(--ov-fg,var(--ios-label))}
+.sheet .tag-sug:hover{background:var(--ov-hover-2,rgba(0,122,255,.18))}
+.sheet .tag-suggest-label,.sheet .tag-hint{color:var(--ov-fg-dim,var(--ios-gray))}
+
+/* 标签编辑弹窗 */
+.tag-edit-body{padding:6px 18px 4px}
+.tag-chips{display:flex;flex-wrap:wrap;gap:7px;min-height:34px;align-items:center;margin-bottom:10px}
+.tag-empty{color:var(--lib-fg-dim,var(--ios-gray));font-size:13px}
+.tag-chip.tag-edit{background:var(--lib-accent-soft,rgba(0,122,255,.12));font-size:13px;padding:4px 6px 4px 10px}
+.tag-x{
+  border:none;background:none;color:var(--lib-accent,var(--ios-blue));font-size:15px;line-height:1;
+  cursor:pointer;padding:0 2px 0 4px;opacity:.7;
+}
+.tag-x:hover{opacity:1}
+.tag-hint{font-size:12px;color:var(--ios-gray);margin-top:8px;line-height:1.5}
+.switch{
+  width:50px;height:30px;border-radius:15px;background:var(--ios-gray4);position:relative;
+  transition:background .2s;flex:0 0 auto;cursor:pointer;
+}
+.switch.on{background:var(--ios-green)}
+.switch::after{
+  content:"";position:absolute;top:2px;left:2px;width:26px;height:26px;border-radius:50%;
+  background:#fff;box-shadow:0 2px 5px rgba(0,0,0,.22);transition:transform .2s;
+}
+.switch.on::after{transform:translateX(20px)}
+.color-row{display:flex;gap:9px;align-items:center}
+.color-dot{width:30px;height:30px;border-radius:50%;border:2px solid transparent;cursor:pointer}
+.color-dot.sel{border-color:var(--ios-blue);box-shadow:0 0 0 2px rgba(0,122,255,.2)}
+.preview-box{
+  margin:0 14px 14px;padding:16px;border-radius:11px;line-height:1.7;font-size:15px;
+  border:1px solid var(--ios-separator);
+}
+.seg-full{display:flex;background:var(--ios-gray6);border-radius:9px;padding:2px;flex:1}
+.seg-full .seg-btn{flex:1;padding:6px;border-radius:7px;font-size:13.5px}
+.seg-full .seg-btn.active{background:#fff;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+
+/* 书内搜索 */
+.search-bar{
+  position:absolute;top:0;left:0;right:0;z-index:120;background:rgba(250,250,250,.97);
+  backdrop-filter:blur(20px);padding:26px 14px 9px;display:flex;align-items:center;gap:10px;
+  border-bottom:.5px solid var(--ios-separator);
+}
+.search-bar input{flex:1;border:none;background:var(--ios-gray6);border-radius:9px;padding:8px 12px;outline:none;font-size:15px}
+.search-nav{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ios-gray)}
+.search-nav button{padding:4px 9px;border-radius:7px;background:var(--ios-gray6);font-size:13px}
+.search-nav button#searchDone{color:var(--ios-blue);font-weight:600;background:none}
+
+/* 手写工具条。
+   ⚠ 必须能换行：小屏上只有一行时「粗细 / 撤销 / 清空 / 删除 / 完成」和后面的
+   颜色会被整体挤出屏幕（max-width 只约束了盒子，flex 子项不会缩），
+   用户看到的就是「笔迹栏被截了、颜色看不到、没法删除」。 */
+.pen-bar{
+  position:absolute;left:0;right:0;margin:0 auto;bottom:66px;z-index:130;
+  background:rgba(250,250,250,.97);backdrop-filter:blur(20px);border-radius:14px;
+  box-shadow:0 8px 30px rgba(0,0,0,.22);padding:9px 13px;display:flex;align-items:center;
+  justify-content:center;flex-wrap:wrap;gap:10px 14px;
+  border:.5px solid rgba(0,0,0,.1);
+  /* ⚠ 必须用 left:0/right:0 + width:max-content 来居中：
+     以前是 left:50% + translateX(-50%)，绝对定位的可用宽度只剩父级的一半，
+     换行后整条被压成 ~190px 宽（四行、颜色全挤在一起）。 */
+  width:max-content;max-width:94%;
+}
+.pen-group{display:flex;align-items:center;gap:6px}
+.pen-tool{padding:6px 11px;border-radius:8px;font-size:13px;background:var(--ios-gray6)}
+.pen-tool.active{background:var(--ios-blue);color:#fff;font-weight:600}
+.pen-tool.done{background:var(--ios-blue);color:#fff;font-weight:600}
+.pen-label{font-size:12px;color:var(--ios-gray)}
+#penWidth{width:90px}
+.color-dot-sm{width:24px;height:24px;border-radius:50%;border:2px solid transparent;cursor:pointer}
+.color-dot-sm.sel{border-color:var(--ios-blue)}
+
+/* 划词浮层 */
+.sel-popover{
+  position:absolute;z-index:140;background:#2C2C2E;border-radius:11px;padding:5px;
+  display:flex;flex-direction:column;gap:4px;box-shadow:0 6px 22px rgba(0,0,0,.32);
+}
+.sel-row{display:flex;gap:3px;align-items:center;justify-content:center}
+.sel-popover button{color:#fff;padding:7px 13px;border-radius:7px;font-size:13.5px}
+.sel-popover button:hover{background:rgba(255,255,255,.16)}
+
+/* 标记样式按钮：每种类型用不同颜色，避免面板顶部一片黄难以区分 */
+.sel-mark{padding:6px 9px !important;display:grid;place-items:center}
+.sel-mark .mk-ico{display:block;width:22px;height:15px;border-radius:2px;position:relative;
+  --ico:#FFD43B;background:transparent}
+/* ⚠️ 必须写成 `.sel-mark .mk-ico-hl`：上面 `.sel-mark .mk-ico{background:transparent}`
+   特异性是 (0,2,0)，光写 `.mk-ico-hl` 是 (0,1,0) 会被压掉 —— 高亮图标整块透明，
+   用户 R58 实测「高光图像没有，每次都是盲摸」（其余四个靠 border/::after 画，所以只有它看不见）。 */
+.sel-mark .mk-ico-hl,.mk-ico-hl{background:var(--ico)}
+.mk-ico-ul{border-bottom:3px solid var(--ico)}
+.mk-ico-st{overflow:hidden}
+.mk-ico-st::after{content:'';position:absolute;top:6px;left:0;right:0;height:3px;background:var(--ico)}
+.mk-ico-wv{overflow:hidden}
+.mk-ico-wv::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:6px;
+  background:repeating-linear-gradient(90deg,var(--ico) 0 3px,transparent 3px 4px,var(--ico) 4px 7px,transparent 7px 8px);
+  -webkit-mask:radial-gradient(circle at 50% 100%,#000 2.4px,transparent 2.6px) 0 0/8px 6px repeat-x;
+  mask:radial-gradient(circle at 50% 100%,#000 2.4px,transparent 2.6px) 0 0/8px 6px repeat-x;
+}
+.mk-ico-bd{color:var(--ico);font-weight:900;font-size:14px;line-height:15px;text-align:center}
+.mk-ico-bd::after{content:'B'}
+
+/* 五种类型各自的识别色 */
+[data-style="highlight"] .mk-ico,[data-style="highlight"].mk-ico{--ico:#FFD43B}
+[data-style="underline"] .mk-ico,[data-style="underline"].mk-ico{--ico:#1C7ED6}
+[data-style="strike"]    .mk-ico,[data-style="strike"].mk-ico{--ico:#E03131}
+[data-style="wavy"]      .mk-ico,[data-style="wavy"].mk-ico{--ico:#2F9E44}
+[data-style="bold"]      .mk-ico,[data-style="bold"].mk-ico{--ico:#7048E8}
+
+/* 已应用该样式时的角标 */
+.sel-mark.has::after{
+  content:'';position:absolute;right:3px;bottom:2px;width:6px;height:6px;border-radius:50%;
+  background:var(--ios-blue);box-shadow:0 0 0 1.5px #2C2C2E;
+}
+.sel-mark{position:relative}
+
+/* 浮层里的状态提示 */
+.sel-tip{font-size:11.5px;color:rgba(255,255,255,.62);padding:1px 6px 3px;text-align:center;max-width:230px}
+
+/* 标记检视器 */
+.mk-list{max-height:min(52vh,340px);overflow:auto;padding:4px 20px 0}
+.mk-item{border:1px solid var(--ios-separator);border-radius:10px;padding:11px 12px;margin-bottom:9px}
+.mk-item-head{display:flex;align-items:center;gap:7px;font-size:14px}
+.mk-item-range{color:var(--ios-gray);font-size:12.5px;font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mk-item-note{font-size:13.5px;line-height:1.55;margin-top:7px;color:var(--ios-label);word-break:break-word}
+.mk-item-note.empty{color:var(--ios-gray)}
+.mk-item-actions{display:flex;gap:8px;margin-top:9px}
+.mk-item-actions button{
+  flex:1;background:var(--ios-gray6);border:none;border-radius:7px;padding:6px 0;
+  font-size:13px;color:var(--ios-blue);font-weight:500;
+}
+.mk-item-actions button.danger{color:var(--ios-red)}
+
+/* 浮层颜色点 */
+.sel-colors{gap:6px !important;padding:1px 0}
+.sel-color{width:19px !important;height:19px;border-radius:50%;padding:0 !important;border:2px solid transparent;box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)}
+.sel-color.sel{border-color:#fff}
+
+/* ---------- 播读 ---------- */
+.tts-hl{
+  position:absolute;z-index:55;pointer-events:none;border-radius:4px;
+  background:rgba(255,214,10,.34);box-shadow:0 0 0 1px rgba(255,180,0,.55);
+  transition:all .12s linear;
+}
+.tts-bar{bottom:58px}
+.tts-select{
+  background:var(--ios-gray6);border:none;border-radius:8px;padding:6px 9px;
+  font-size:13.5px;max-width:190px;color:var(--ios-label);outline:none;
+}
+@media (prefers-color-scheme: dark) {
+  .tts-select{background:rgba(255,255,255,.14);color:#fff}
+  .tts-select option{color:#000}
+}
+
+/* 正文中的标记 */
+.mk{border-radius:2px}
+.mk.note{box-shadow:inset 0 -2px 0 0 var(--ios-blue)}
+
+/* 笔记面板：样式 / 颜色选择 */
+.note-meta{margin:12px 20px 0;display:flex;flex-direction:column;gap:8px}
+.note-mk-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.mk-pick{
+  display:flex;align-items:center;gap:5px;padding:6px 11px;border-radius:8px;
+  background:var(--ios-gray6);font-size:13.5px;color:var(--ios-label);
+}
+.mk-pick.sel{background:var(--ios-blue);color:#fff}
+.mk-pick.sel .mk-ico-hl{box-shadow:0 0 0 1px rgba(0,0,0,.12)}
+.note-mk-row .sel-color{width:22px;height:22px}
+
+/* 笔记列表里的样式小样 */
+.mk-swatch{
+  display:inline-grid;place-items:center;width:19px;height:19px;border-radius:4px;
+  font-size:12px;font-weight:700;margin-right:6px;vertical-align:-3px;flex:0 0 auto;
+  border:1px solid var(--ios-separator);
+}
+.li-note{font-weight:600;font-size:14.5px;margin-bottom:4px;word-break:break-word}
+.li-quote{color:var(--ios-gray);font-size:13px;line-height:1.5}
+.btn-plain.danger{flex:0 0 auto !important;color:var(--ios-red)}
+
+/* 笔记 sheet */
+.sheet{position:absolute;inset:0;z-index:200;background:rgba(0,0,0,.4);display:flex;overflow-y:auto;padding:30px}
+/* 选择/多选弹层（共享范围「更改…」等）要盖在其它 sheet 之上，否则点不到。
+   R71：还要盖得住 .loading（z-index:500）—— 共享下载判重时是「先开遮罩、
+   再弹选择」，层级低了整块被遮住，用户只看到转圈（「补齐一直在转」）。 */
+#choiceSheet{z-index:600}
+.sheet-card{
+  margin:auto;background:var(--ov-card,var(--ios-bg));border-radius:16px;width:min(520px,100%);
+  color:var(--ov-fg,var(--ios-label));
+  max-height:calc(100vh - 56px);overflow-y:auto;
+  box-shadow:0 20px 60px rgba(0,0,0,.3);animation:pop .22s ease;
+}
+@keyframes pop{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}
+.sheet-head{padding:16px 20px 8px}
+.sheet-head h3{margin:0;font-size:17px;font-weight:600;text-align:center;color:var(--ov-fg,var(--ios-label))}
+.quote{margin:0 20px;padding:11px 13px;background:var(--ov-field,var(--ios-gray6));border-radius:9px;font-size:13.5px;line-height:1.55;max-height:96px;overflow:auto;color:var(--ov-fg-dim,var(--ios-label2))}
+/* 同一片文字上的多条笔记列表：一行一条，点哪条编辑哪条（.on = 当前正在编辑） */
+.note-list{margin:10px 20px 0;max-height:190px;overflow:auto;border:1px solid var(--ov-line,var(--ios-separator));border-radius:10px}
+.note-list[hidden]{display:none}
+.nl-title{font-size:12px;color:var(--ov-fg-dim,var(--ios-gray));padding:8px 11px 4px}
+.nl-row{display:flex;align-items:center;gap:6px;padding:8px 11px;cursor:pointer;border-top:.5px solid var(--ov-line,var(--ios-separator))}
+.nl-row:hover{background:var(--ov-hover,var(--ios-gray6))}
+.nl-row.on{background:var(--ov-accent-soft,rgba(25,113,194,.12))}
+.nl-i{flex:0 0 auto;width:15px;text-align:center;font-size:11.5px;color:var(--ov-fg-dim,var(--ios-gray))}
+.nl-text{flex:1 1 auto;min-width:0;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nl-sub{flex:0 0 auto;font-size:11px;color:var(--ov-fg-dim,var(--ios-gray))}
+/* 每条右侧的「✕」：就地删除这条标记，不必点进编辑再退出（R58 用户要求） */
+.nl-del{flex:0 0 auto;width:28px;height:28px;line-height:1;border:none;border-radius:50%;
+  background:transparent;color:var(--ov-fg-dim,var(--ios-gray));font-size:14px;cursor:pointer;padding:0}
+.nl-del:hover{background:rgba(255,59,48,.14);color:var(--ios-red,#FF3B30)}
+.nl-add{padding:9px 11px;font-size:12.5px;color:var(--ov-accent,var(--ios-blue));cursor:pointer;border-top:.5px solid var(--ov-line,var(--ios-separator))}
+.nl-add:hover{background:var(--ov-hover,var(--ios-gray6))}
+.sheet-card textarea{
+  width:calc(100% - 40px);margin:14px 20px 0;border:1px solid var(--ov-line,var(--ios-separator));border-radius:10px;
+  padding:11px;font-size:15px;min-height:110px;resize:vertical;outline:none;
+  background:var(--ov-field-2,var(--ios-bg));color:var(--ov-fg,var(--ios-label));
+}
+.sheet-actions{display:flex;gap:10px;padding:14px 20px 18px}
+.sheet-actions button{flex:1}
+
+/* ---------- 选区翻译结果 ---------- */
+.trans-block{margin:0 20px;padding:11px 13px;background:var(--ov-field,var(--ios-gray6));border-radius:9px;font-size:14px;line-height:1.6}
+.trans-block + .trans-block{margin-top:10px}
+.trans-label{font-size:12px;color:var(--ov-fg-dim,var(--ios-label2));margin-bottom:4px}
+.trans-text{white-space:pre-wrap;word-break:break-word;max-height:32vh;overflow:auto;color:var(--ov-fg,var(--ios-label))}
+.trans-block:last-child{margin-bottom:18px}
+
+/* ---------- 查词 / 小窗浏览器 ---------- */
+.dict-drawer{width:min(430px,86%)}
+.dict-body{padding:0 0 20px}
+.dict-word{
+  padding:14px 18px 12px;font-size:24px;font-weight:600;letter-spacing:.5px;
+  border-bottom:1px solid var(--ov-line,var(--ios-separator));word-break:break-all;
+}
+/* 可编辑的查询词 */
+.dict-query{display:flex;gap:8px;padding:11px 14px 4px}
+.dict-query input{
+  flex:1;border:1px solid var(--ov-line,var(--ios-separator));border-radius:9px;padding:8px 11px;
+  font-size:15px;background:var(--ov-field,var(--ios-gray6));color:var(--ov-fg,var(--ios-label));
+}
+.dict-query input:focus{outline:2px solid var(--ov-accent,var(--ios-blue));outline-offset:-2px}
+.dict-go{padding:0 16px;font-size:14px;border-radius:9px;white-space:nowrap}
+.dict-hint{padding:2px 15px 10px;font-size:12px;color:var(--ov-fg-dim,var(--ios-gray));line-height:1.5}
+/* 外链降级：可复制的链接框 */
+.ext-link-box{
+  position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:9999;
+  background:#fff;border-radius:14px;padding:20px;box-shadow:0 12px 40px rgba(0,0,0,.28);
+  width:min(420px,86vw);font-size:14px;color:#1c1c1e;
+}
+.ext-link-box .el-t{margin-bottom:10px;line-height:1.5;padding-right:30px}
+.ext-link-box .el-close{
+  position:absolute;top:8px;right:10px;width:28px;height:28px;
+  border:none;background:transparent;cursor:pointer;border-radius:50%;
+  font-size:22px;line-height:1;color:#8e8e93;
+}
+.ext-link-box .el-close:hover{background:rgba(0,0,0,.06);color:#1c1c1e}
+.ext-link-box .el-input{
+  width:100%;border:1px solid #D1D1D6;border-radius:8px;padding:9px 10px;
+  font-size:12.5px;font-family:ui-monospace,Menlo,monospace;margin-bottom:12px;
+}
+.ext-link-box .el-acts{display:flex;gap:8px}
+.ext-link-box .el-a{
+  display:inline-block;background:var(--ios-blue);color:#fff;text-decoration:none;
+  padding:9px 16px;border-radius:9px;font-size:14px;
+}
+.dict-word.as-query{font-size:17px;font-weight:500;line-height:1.5;color:var(--ov-fg,var(--ios-label))}
+.dict-sec{padding:14px 18px 0}
+.dict-sec-t{
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:12px;color:var(--ov-fg-dim,var(--ios-gray));text-transform:none;margin-bottom:7px;
+}
+.dict-ext{
+  background:none;border:none;color:var(--ov-accent,var(--ios-blue));font-size:12px;padding:0;cursor:pointer;
+}
+.dict-def{font-size:14.5px;line-height:1.6;color:var(--ov-fg,var(--ios-label))}
+.dict-ph{color:var(--ov-fg-dim,var(--ios-gray));font-size:13.5px;margin-bottom:5px}
+.dict-mean{font-size:14px;line-height:1.55;margin-bottom:7px;color:var(--ov-fg,var(--ios-label))}
+.dict-mean b{color:var(--ov-accent,var(--ios-blue));margin-right:5px}
+.dict-empty{font-size:13px;color:var(--ov-fg-dim,var(--ios-gray));line-height:1.6}
+.dict-sites{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:9px}
+.dict-site{
+  background:var(--ov-field,var(--ios-gray6));border:none;border-radius:8px;padding:6px 13px;
+  font-size:13.5px;color:var(--ov-fg,var(--ios-label));cursor:pointer;
+}
+.dict-site.sel{background:var(--ov-accent,var(--ios-blue));color:var(--ov-accent-fg,#fff)}
+.dict-warn{
+  background:rgba(255,159,10,.14);border-radius:8px;padding:8px 11px;
+  font-size:12.5px;line-height:1.55;color:var(--ov-fg,var(--ios-label));margin-bottom:9px;
+}
+.dict-warn code{background:rgba(0,0,0,.07);padding:1px 4px;border-radius:3px;font-size:11.5px}
+.dict-browser{
+  position:relative;              /* 给「加载超时」浮层当定位容器 */
+  height:min(46vh,340px);border:1px solid var(--ov-line,var(--ios-separator));
+  border-radius:10px;overflow:hidden;background:var(--ov-field-2,#fff);
+}
+.dict-frame{width:100%;height:100%;border:none;display:block}
+.dict-frame-status{font-size:11.5px;color:var(--ov-fg-dim,var(--ios-gray));margin-top:6px;text-align:center;min-height:14px}
+.dict-fallback{
+  height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:10px;padding:22px;text-align:center;background:var(--ov-field,var(--ios-gray6));
+}
+.df-title{font-size:15px;font-weight:600}
+.df-sub{font-size:12.5px;color:var(--ov-fg-dim,var(--ios-gray));line-height:1.6}
+.df-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+/* iframe 里出现浏览器自己的错误页（127.0.0.1 未发送任何数据）时，盖一层能操作的提示，
+   用户在 iPad / 小窗里没法刷新，只能看到一片空白 —— 给他「重试 / 用浏览器打开」。 */
+.dict-overlay{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(250,250,250,.96);z-index:5;padding:18px;
+}
+.dict-overlay .do-card{display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center;max-width:420px}
+
+/* 加载 */
+.loading{
+  position:absolute;inset:0;z-index:500;background:rgba(0,0,0,.42);backdrop-filter:blur(3px);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:#fff;
+}
+.spinner{
+  width:38px;height:38px;border:3.5px solid rgba(255,255,255,.28);border-top-color:#fff;
+  border-radius:50%;animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:14px}
+
+/* Toast */
+.toast{
+  position:fixed;left:50%;bottom:34px;transform:translate(-50%,20px);
+  background:rgba(30,30,32,.94);color:#fff;padding:11px 20px;border-radius:11px;font-size:14px;
+  z-index:9999;opacity:0;pointer-events:none;transition:.24s;max-width:76vw;text-align:center;
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* 竖屏 iPad 适配：书架侧栏收窄 */
+.ipad.portrait .lib-sidebar{width:212px;flex-basis:212px}
+.ipad.portrait .book-grid{grid-template-columns:repeat(auto-fill,minmax(126px,1fr))}
+.ipad.portrait .drawer{width:min(336px,86%)}
+.ipad.portrait .bar-actions .bar-btn{font-size:12.5px;padding:6px 7px}
+
+/* -----------------------------------------------------------
+   手机窗口（390×844）：侧栏收成图标栏，正文单列。
+   和上面的 .portrait 是两套规则 —— 手机比竖屏 iPad 窄得多，
+   侧栏留 212px 就只剩 170px 给书了，必须换成图标栏。
+   ----------------------------------------------------------- */
+/* 小屏：侧栏改成「滑出抽屉」。
+   以前是 86px 图标栏（一行只剩 73px 可用）—— 收藏夹名一个字都看不见，
+   整理模式的「全选 / 已选 / 完成」被挤成竖排，整栏还横向溢出。
+   抽屉里按桌面排版走，宽度 min(282px,82%)，默认收起，点左上角 ☰ 打开。 */
+.ipad.phone .lib-sidebar{
+  position:absolute;left:0;top:0;bottom:0;z-index:76;
+  width:min(282px,82%);flex:0 0 auto;padding:26px 12px 14px;
+  transform:translateX(-104%);transition:transform .22s ease;
+  box-shadow:0 6px 34px rgba(0,0,0,.3);will-change:transform;
+}
+.ipad.phone .lib-sidebar.open{transform:none}
+.ipad.phone .lib-side-scrim{display:block;position:absolute;inset:0;z-index:75;background:rgba(0,0,0,.34)}
+.ipad.phone .lib-brand{padding:0 8px 16px}
+.ipad.phone .lib-nav{gap:2px}
+.ipad.phone .nav-item{
+  flex-direction:row;justify-content:flex-start;gap:10px;padding:9px 10px;
+  border-radius:9px;font-size:14px;line-height:1.25;text-align:left;max-width:none;
+}
+.ipad.phone .nav-ico{font-size:15px;width:20px}
+.ipad.phone .lib-coll-head{flex-wrap:nowrap;justify-content:space-between;gap:6px;font-size:12px}
+.ipad.phone .coll-empty{font-size:11.5px}
+.ipad.phone .coll-empty::after{content:none}
+.ipad.phone .lib-sidebar-foot .import-btn{font-size:15px;padding:11px;gap:6px}
+.ipad.phone .lib-sidebar-foot .import-btn .plus{font-size:15px}
+.ipad.phone .lib-stats,.ipad.phone .lib-ver{font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ipad.phone .lib-share{font-size:10px;padding:6px 0}
+.ipad.phone .lib-uninstall{font-size:9px;padding:5px 0}
+.ipad.phone .lib-header{padding:28px 12px 10px}
+.ipad.phone .lib-h1{font-size:24px;margin-bottom:10px}
+.ipad.phone .lib-scroll{padding:14px 12px 34px}
+.ipad.phone .book-grid{grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:16px 12px}
+.ipad.phone .search-field{flex:1 1 100%;max-width:none}
+.ipad.phone .continue-card{padding:10px;gap:10px}
+.ipad.phone .drawer{width:min(320px,92%)}
+.ipad.phone .bar-actions .bar-btn{font-size:11.5px;padding:5px 6px}
+/* 手机窗口的阅读器顶/底栏：390 宽塞不下十来个按钮。
+   顶栏按钮改成横向滑动（点工具栏后左右滑），底栏缩字号一行放下 ——
+   宁可挤一点，也别把按钮裁到屏幕外点不到。 */
+.ipad.phone .top-bar{gap:4px;padding-left:8px;padding-right:8px}
+.ipad.phone .bar-title{flex:0 0 auto;max-width:76px;padding:0 4px;font-size:12.5px}
+.ipad.phone .bar-actions{
+  flex:1 1 auto;min-width:0;flex-wrap:nowrap;justify-content:flex-start;
+  overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;
+}
+.ipad.phone .bar-actions::-webkit-scrollbar{display:none}
+.ipad.phone .bar-actions .bar-btn{white-space:nowrap}
+.ipad.phone .bottom-bar{gap:3px;padding:0 6px}
+.ipad.phone .bottom-bar .bar-btn{font-size:11px;padding:4px 5px}
+.ipad.phone .bar-divider{display:none}
+.ipad.phone .progress-wrap{min-width:64px;gap:6px}
+.ipad.phone .page-label{min-width:44px;font-size:10.5px}
+.ipad.phone .speed-wrap{min-width:0}
+/* 手写条在小屏：字号/间距收紧，按「工具 / 颜色 / 粗细 + 操作」三行折，保证
+   删除、清空、完成和全部颜色都在屏幕内（原来一行直接溢出到屏幕外） */
+.ipad.phone .pen-bar{gap:6px 8px;padding:7px 9px;bottom:62px;max-width:calc(100% - 14px);border-radius:12px}
+.ipad.phone .pen-bar .pen-tool{font-size:11.5px;padding:5px 8px;border-radius:7px}
+.ipad.phone .pen-bar .pen-label{font-size:11px}
+.ipad.phone .pen-group{gap:4px}
+.ipad.phone #penWidth{width:58px}
+.ipad.phone .color-dot-sm{width:22px;height:22px}
+/* 底栏：小屏上「⇄ 左右 / ▶ 自动」的文案压缩成图标，给页码和 ▲ 腾地方 */
+.ipad.phone .bottom-bar{gap:2px;padding:0 5px;overflow-x:auto;scrollbar-width:none}
+.ipad.phone .bottom-bar::-webkit-scrollbar{display:none}
+.ipad.phone .bottom-bar .bar-btn{white-space:nowrap}
+.ipad.phone .progress-wrap{min-width:56px;gap:5px}
+/* 缩放列在小屏上收一圈：4×42px 的竖条会一直压住正文右下角 */
+.ipad.phone .pdf-zoom-ctl{right:8px;bottom:66px;border-radius:12px}
+.ipad.phone .pdf-zoom-ctl .pz-btn{width:36px;height:36px;font-size:14px}
+.ipad.phone .pdf-zoom-ctl .pz-fit{font-size:10px;padding:5px 2px}
+.ipad.phone .pdf-zoom-ctl .pz-fit #pdfZoomVal{font-size:9px}
+/* toast 别压在底栏上（fixed 在 body 上，只能用 body.in-app 这层） */
+body.in-app .toast{bottom:76px;font-size:13px;max-width:86vw}
+
+/* 窗口窄了（手机 APK、桌面拉小窗口）：控制条压成一行，六档改成横向滑动。
+   手机上寸土寸金，换行成三排会吃掉 90px 正文高度；「显示状态栏 / 清空数据」
+   这两个调试开关收起来（桌面端照旧）。 */
+@media (max-width:760px){
+  .proto-bar{height:44px;flex-wrap:nowrap;gap:8px;padding:0 8px;overflow:hidden}
+  .proto-title,.proto-hint,.proto-check,#resetDataBtn{display:none}
+  .proto-seg{flex:1 1 auto;min-width:0;max-width:none;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .proto-seg::-webkit-scrollbar{display:none}
+  .proto-seg .seg-btn{padding:4px 8px;font-size:11.5px;white-space:nowrap}
+  .proto-btn{padding:4px 10px;font-size:11.5px}
+}
+
+/* 滚动条（书架） */
+.lib-scroll::-webkit-scrollbar,.drawer-body::-webkit-scrollbar{width:8px}
+.lib-scroll::-webkit-scrollbar-thumb,.drawer-body::-webkit-scrollbar-thumb{background:var(--ov-scroll,var(--lib-scroll,rgba(0,0,0,.18)));border-radius:4px}
+
+/* ===========================================================
+   批量选择（全选 / 移动 / 收藏 / 删除 / 选择性共享）
+   =========================================================== */
+.select-btn{
+  background:var(--lib-field,var(--ios-gray6));border:none;border-radius:9px;padding:6px 14px;
+  font-size:14px;color:var(--lib-fg,var(--ios-label));cursor:pointer;
+}
+.select-btn:hover{filter:brightness(.96)}
+.select-btn.on{background:var(--lib-accent,var(--ios-blue));color:var(--lib-accent-fg,#fff);font-weight:600}
+
+.bulk-bar{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  padding:9px 14px;border-top:1px solid var(--lib-line,var(--ios-separator));
+  background:var(--lib-bg,var(--ios-bg));box-shadow:0 -2px 10px rgba(0,0,0,.06);
+}
+.bulk-bar[hidden]{display:none}
+.bulk-btn{
+  background:var(--lib-field,var(--ios-gray6));border:none;border-radius:9px;padding:6px 12px;
+  font-size:13.5px;color:var(--lib-fg,var(--ios-label));cursor:pointer;white-space:nowrap;
+}
+.bulk-btn:hover{filter:brightness(.96)}
+.bulk-btn:active{transform:scale(.97)}
+.bulk-btn:disabled{opacity:.42;cursor:default}
+.bulk-btn.danger{color:var(--ios-red)}
+.bulk-count{font-size:13px;color:var(--lib-fg-dim,var(--ios-gray));margin-left:2px}
+.bulk-spacer{flex:1}
+
+/* 选择模式下：卡片右上角出现勾选圈 */
+.book-check{
+  position:absolute;top:6px;right:6px;z-index:6;width:26px;height:26px;border-radius:50%;
+  background:rgba(255,255,255,.92);border:2px solid rgba(0,0,0,.22);
+  display:grid;place-items:center;font-size:15px;font-weight:700;color:#fff;
+  box-shadow:0 1px 4px rgba(0,0,0,.25);
+}
+.book-check[hidden]{display:none}
+.book-card.sel .book-check{background:var(--lib-accent,var(--ios-blue));border-color:var(--lib-accent,var(--ios-blue));color:var(--lib-accent-fg,#fff)}
+.book-card.sel .book-cover{box-shadow:0 0 0 3px var(--lib-accent,var(--ios-blue)),0 5px 14px rgba(0,0,0,.18)}
+.book-grid.selecting .book-card{cursor:pointer}
+.book-grid.selecting .book-del{display:none}
+
+/* 漫画页面管理 */
+.page-card{width:min(560px,94%)}
+.page-count{font-size:13px;color:var(--ios-gray);margin-right:auto}
+.page-tools{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  padding:0 14px 10px;
+}
+.page-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:12px;
+  padding:0 14px 10px;max-height:min(48vh,380px);overflow:auto;
+}
+.pg-item{
+  position:relative;border-radius:8px;overflow:hidden;cursor:pointer;
+  background:var(--ios-gray6);border:2px solid transparent;
+}
+.pg-item.sel{border-color:var(--ios-blue)}
+.pg-item img{width:100%;height:104px;object-fit:cover;display:block}
+.pg-no{
+  position:absolute;top:3px;left:3px;background:rgba(0,0,0,.6);color:#fff;
+  font-size:11px;padding:1px 6px;border-radius:4px;font-weight:600;
+}
+.pg-name{
+  font-size:10.5px;color:var(--ios-gray);padding:3px 5px;line-height:1.3;
+  max-height:2.6em;overflow:hidden;word-break:break-all;
+}
+.pg-acts{
+  position:absolute;bottom:3px;right:3px;display:flex;gap:3px;
+}
+.pg-btn{
+  position:relative;
+  width:30px;height:30px;border-radius:7px;border:none;cursor:pointer;
+  background:rgba(0,0,0,.55);color:#fff;font-size:14px;line-height:1;
+  display:grid;place-items:center;
+}
+/* 同上：按钮还是这么大，但手指落点范围撑到 44 */
+/* 同上：按钮还是这么大，但手指落点范围撑大到 44。
+   横向只撑到 38 —— 两个按钮挨得近，撑满 44 会互相抢地盘 */
+.pg-btn::after{
+  content:'';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:38px;height:44px;
+}
+.pg-btn:hover{background:rgba(0,0,0,.75)}
+.pg-btn.danger{background:rgba(220,60,60,.85)}
+.page-acts{
+  display:flex;gap:8px;padding:0 14px 10px;flex-wrap:wrap;
+}
+.page-acts button{padding:8px 14px;font-size:14px}
+
+/* 整库备份 */
+.backup-stat{
+  font-size:13px;color:var(--ios-label);background:var(--ios-gray6);
+  border-radius:10px;padding:9px 11px;margin:8px 0 2px;line-height:1.6;
+}
+
+/* 共享范围（明确列出共享了哪几本，避免黑箱） */
+.share-scope{
+  margin:10px 0 6px;border:1px solid var(--ios-separator);border-radius:10px;
+  padding:9px 11px;background:var(--ios-gray6);
+}
+.ss-line{display:flex;align-items:center;justify-content:space-between;font-size:13.5px;margin-bottom:5px}
+.ss-list{font-size:12.5px;color:var(--ios-gray);line-height:1.55;max-height:86px;overflow:auto}
+.ss-hint{font-size:11.5px;color:var(--ios-gray);line-height:1.5;margin-top:5px}
+/* R66 共享内容三开关（笔记 / 手迹 / 目录）：整行可点，触屏别让 checkbox 太小 */
+.share-opt{
+  display:flex;align-items:center;gap:8px;font-size:13px;line-height:1.9;
+  color:var(--ios-label);cursor:pointer;user-select:none;
+}
+.share-opt input[type=checkbox]{width:17px;height:17px;margin:0;flex:0 0 auto}
+.addr-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 0}
+.addr-row code{font-size:12.5px;color:var(--ios-label);word-break:break-all}
+.addr-tag{font-size:10.5px;background:var(--ios-blue);color:#fff;border-radius:4px;padding:1px 5px;margin-left:3px}
+.choice-item.ok{color:var(--ios-blue);font-weight:600;border-bottom:1px solid var(--ios-separator)}
+
+/* ===========================================================
+   全文翻译面板（InkReader · 翻译 / 术语表 / 插件）
+   =========================================================== */
+.translate-panel{
+  position:fixed;top:0;right:0;height:100%;width:380px;max-width:92vw;
+  background:var(--ios-gray6,#f2f2f7);border-left:1px solid var(--ios-separator,#c8c8cd);
+  box-shadow:-8px 0 24px rgba(0,0,0,.12);z-index:1200;display:flex;flex-direction:column;
+  transform:translateX(0);transition:transform .22s ease;
+}
+.translate-panel[hidden]{display:none !important}
+.translate-panel:not(.open){transform:translateX(105%)}
+.tp-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 14px;font-size:16px;font-weight:600;
+  background:var(--ios-blue,#007AFF);color:#fff;flex:0 0 auto;
+}
+.tp-close{background:transparent;border:none;color:#fff;font-size:18px;cursor:pointer;line-height:1}
+.tp-body{padding:12px 14px;overflow:auto;flex:1 1 auto}
+.tp-row{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+.tp-row label{font-size:12.5px;color:var(--ios-gray,#8e8e93)}
+.tp-row select,.tp-row input{
+  font-size:14px;padding:8px 9px;border:1px solid var(--ios-separator,#c8c8cd);
+  border-radius:9px;background:#fff;color:var(--ios-label,#1c1c1e);
+}
+.tp-sep{font-size:12px;color:var(--ios-gray,#8e8e93);margin:12px 0 5px;font-weight:600}
+.tp-ta{
+  width:100%;min-height:64px;font-size:13px;line-height:1.5;resize:vertical;
+  border:1px solid var(--ios-separator,#c8c8cd);border-radius:9px;padding:8px;
+  background:#fff;color:var(--ios-label,#1c1c1e);font-family:inherit;
+}
+.tp-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 4px}
+.tp-status{font-size:12px;color:var(--ios-blue,#007AFF);min-height:16px;margin-bottom:6px}
+.tp-result{max-height:38vh;overflow:auto;border:1px solid var(--ios-separator,#c8c8cd);border-radius:10px;background:#fff}
+.tr-item{padding:8px 10px;border-bottom:1px solid var(--ios-separator,#ececf0)}
+.tr-item:last-child{border-bottom:none}
+.tr-src{font-size:13px;color:var(--ios-label,#1c1c1e);margin-bottom:3px}
+.tr-dst{font-size:13.5px;color:var(--ios-blue-dark,#0060DF);line-height:1.55}
+
+/* 对照结果按页分节（R148）：每译一页多一节，标题可折叠；切换页面翻译不会清掉上一页 */
+.tr-sec{border-bottom:1px solid var(--ios-separator,#ececf0)}
+.tr-sec:last-child{border-bottom:none}
+.tr-sec-head{display:flex;align-items:center;gap:6px;width:100%;box-sizing:border-box;
+  padding:7px 9px;border:none;background:var(--ios-gray6,#f2f2f7);font:inherit;font-size:12.5px;
+  font-weight:600;color:var(--ios-label,#1c1c1e);cursor:pointer;text-align:left}
+.tr-sec-head:active{opacity:.7}
+.tr-sec-caret{flex:0 0 auto;font-size:10px;line-height:1;color:var(--ios-gray,#8e8e93);
+  transition:transform .15s ease}
+.tr-sec.collapsed .tr-sec-caret{transform:rotate(-90deg)}
+.tr-sec-title{flex:0 0 auto}
+.tr-sec-meta{flex:1 1 auto;min-width:0;text-align:right;font-weight:400;font-size:11.5px;
+  color:var(--ios-gray,#8e8e93);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tr-sec-body{display:block}
+.tr-sec.collapsed .tr-sec-body{display:none}
+.tr-sec-stale .tr-sec-meta{color:var(--ios-orange,#FF9500)}
+
+/* 扫描页没文字时的「先识别再翻译」提示（R149）：面板里一块说明 + 一个按钮，
+   代替以前只改状态行、用户还得自己回顶栏找 OCR 的死路。 */
+.tr-need-ocr{padding:10px 11px}
+.tr-need-ocr p{margin:0 0 9px;font-size:12.5px;line-height:1.6;color:var(--ios-gray,#8e8e93)}
+.tr-need-ocr-btn{display:block;width:100%;box-sizing:border-box;padding:9px 12px;
+  border:none;border-radius:9px;background:var(--ios-blue,#007AFF);color:#fff;
+  font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.tr-need-ocr-btn:active{opacity:.75}
+.tr-need-ocr-btn[disabled]{background:var(--ios-gray,#8e8e93);cursor:progress;opacity:.9}
+
+/* 原大屏双语：插在正文容器末尾的整页译文块 */
+.tr-page-tr{margin-top:14px;padding:12px 14px;border-top:2px dashed var(--ios-separator,#c8c8cd);
+  background:rgba(0,96,223,.05);border-radius:10px;font-size:15px;line-height:1.7;
+  color:var(--ios-blue-dark,#0060DF)}
+.tr-page-tr::before{content:"译文";display:block;font-size:11px;letter-spacing:.1em;
+  color:var(--ios-gray,#8e8e93);margin-bottom:6px}
+.tp-plugins{margin-top:8px}
+.tp-features{display:flex;flex-wrap:wrap;gap:6px}
+.tp-feature{font-size:12.5px;padding:5px 10px}
+
+/* 自动检测人名框 */
+.tp-names{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+.tp-names-hint{font-size:12px;color:var(--ios-gray,#8e8e93);line-height:1.5;background:var(--ios-gray6,#f2f2f7);
+  border-radius:8px;padding:8px 10px}
+.tp-name-row{display:flex;align-items:center;gap:6px}
+.tp-name-input{flex:1 1 auto;min-width:0;font-size:13px;padding:6px 8px;border:1px solid var(--ios-separator,#c8c8cd);
+  border-radius:8px;background:#fff;color:var(--ios-label,#1c1c1e);font-family:inherit}
+.tp-name-input:focus{outline:none;border-color:var(--ios-blue,#007AFF)}
+.tp-name-del{flex:0 0 auto;width:26px;height:26px;border-radius:50%;border:none;background:var(--ios-gray6,#f2f2f7);
+  color:var(--ios-red,#ff3b30);font-size:16px;line-height:1;cursor:pointer}
+.tp-name-del:hover{background:#ffe5e3}
+.tp-names-actions{margin:8px 0 2px}
+.tp-names-actions .btn-plain[disabled]{opacity:.45;cursor:default}
+
+/* 提示条：引擎可用性说明（如「浏览器内置翻译」检测结果） */
+.tp-note{font-size:12px;line-height:1.55;color:var(--ios-label,#1c1c1e);background:var(--ios-gray6,#f2f2f7);
+  border-radius:8px;padding:8px 10px}
+.tp-note-sub{display:inline-block;margin-top:4px;color:var(--ios-gray,#8e8e93);font-size:11px}
+
+/* 引擎安装状态：选了但没装时回显 */
+.tp-engine-status{font-size:11.5px;margin-top:4px}
+.tp-engine-status.ok{color:var(--ios-green,#34c759)}
+.tp-engine-status.warn{color:var(--ios-red,#ff3b30)}
+.tp-engine-status a{color:var(--ios-blue,#007AFF);cursor:pointer;text-decoration:underline}
+
+/* 安装/卸载确认弹窗 */
+/* 两处必须自己收：
+   ① 高度：安装完成后正文（模型 + 两处路径 + 占用 + 日志）会很长，旧样式只固定 width、
+      没有 max-height，窗口一矮（笔记本 720p / 浏览器缩放）就把底部「确认/关闭」挤出屏幕，
+      按钮永远点不到。改为「整块最高 = 视口 - 上下留白」，正文区自己滚，按钮区恒定贴底。
+   ② 层级：#toast 是 z-index 9999 且 pointer-events:none —— 它会把弹窗按钮「盖住但点得着」，
+      用户以为按钮死了（实测就是这样）。遮罩提到 10000，把弹窗放在 toast 之上。 */
+.tp-modal-mask{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:10000;
+  display:flex;align-items:center;justify-content:center;padding:16px}
+.tp-modal{width:340px;max-width:90vw;max-height:calc(100vh - 32px);
+  display:flex;flex-direction:column;
+  background:#fff;border-radius:14px;
+  padding:18px 18px 16px;box-shadow:0 10px 40px rgba(0,0,0,.25);position:relative}
+.tp-modal h3{margin:0 28px 10px 0;font-size:16px;color:var(--ios-label,#1c1c1e);flex:0 0 auto}
+.tp-modal-close{position:absolute;top:10px;right:10px;width:28px;height:28px;
+  border:none;background:transparent;border-radius:50%;font-size:20px;line-height:1;
+  color:var(--ios-gray,#8e8e93);cursor:pointer;z-index:2}
+.tp-modal-close:hover{background:var(--ios-gray6,#f2f2f7)}
+.tp-modal-body{font-size:13px;line-height:1.65;color:var(--ios-label,#1c1c1e);
+  overflow-wrap:anywhere;word-break:break-word;
+  flex:0 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.tp-modal-body b{color:var(--ios-blue,#007AFF)}
+.tp-modal-log{background:var(--ios-gray6,#f2f2f7);border-radius:8px;padding:8px;
+  max-height:200px;overflow:auto;font-size:11.5px;white-space:pre-wrap;margin:10px 0 0;
+  line-height:1.5;color:var(--ios-label,#1c1c1e);flex:0 1 auto;min-height:0}
+.tp-modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex:0 0 auto}
+.tp-modal-actions .btn-primary[disabled]{opacity:.5;cursor:default}
+.tp-progress-wrap{margin:12px 0 0;flex:0 0 auto}
+.tp-progress-bar{height:8px;background:var(--ios-gray6,#f2f2f7);border-radius:6px;overflow:hidden}
+.tp-progress-fill{height:100%;width:0;background:var(--ios-blue,#007AFF);border-radius:6px;transition:width .3s ease}
+.tp-progress-meta{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ios-gray,#8e8e93);margin-top:5px}
+/* 状态区里的紧凑进度条（后台安装时显示） */
+.tp-progress-inline{margin:6px 0 2px;height:6px}
+.tp-progress-inline .tp-progress-bar{height:6px}
+.tp-engine-status.installing{color:var(--ios-blue,#007AFF)}
+.tp-bg-cancel{margin-left:8px;padding:2px 10px;font-size:12px;vertical-align:middle;border-radius:8px}
+
+/* ===== Markdown 原文编辑器（R59：.md 要能改原文） ===== */
+/* R60：高度不能用 100vh —— .sheet 是绝对定位撑满 #ipad 的，vh 把浏览器工具栏与
+   模拟框也算进去了，卡片底部（保存/取消）会被裁在框外。改成相对 .sheet 的 100%。 */
+.md-edit-card{width:min(920px,94vw);height:min(100%,900px);max-height:100%;
+  display:flex;flex-direction:column;overflow:hidden}
+.md-edit-card .sheet-head{display:flex;align-items:center;justify-content:space-between;
+  padding:14px 18px 6px;flex:0 0 auto}
+.md-edit-card .sheet-head h3{text-align:left;font-size:16px}
+.md-edit-tip{padding:2px 18px 8px;font-size:12.5px;line-height:1.5;color:var(--ov-fg-dim,var(--ios-gray,#8e8e93));flex:0 0 auto}
+#mdEditSheet .md-edit-card textarea#mdEditText{
+  flex:1 1 auto;min-height:0;width:auto;margin:0 18px;resize:none;
+  font:13.5px/1.7 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  white-space:pre;overflow:auto;-webkit-overflow-scrolling:touch;
+  padding:12px;border:1px solid var(--ov-line,var(--ios-separator));border-radius:10px;
+  background:var(--ov-field-2,var(--ios-bg,#fff));color:var(--ov-fg,var(--ios-label,#1c1c1e));tab-size:4}
+.md-edit-card .sheet-actions{align-items:center;flex:0 0 auto}
+.md-edit-count{font-size:12px;color:var(--ov-fg-dim,var(--ios-gray,#8e8e93));padding-left:4px}
+/* R60：撤销（可连续撤销到打开时的原文；栈底置灰） */
+.md-edit-undo{margin-left:10px;padding:7px 14px;font-size:13px;white-space:nowrap}
+.md-edit-undo[disabled]{opacity:.4;color:var(--ios-gray,#8e8e93);cursor:default}
+
+/* ===========================================================
+   数学公式（KaTeX）
+   -----------------------------------------------------------
+   .ink-math 是渲染前的占位元素；渲染后内部是 .katex。
+   行内公式跟文字一起走；$$...$$ 行间公式独占一行、居中、可横向滚动
+   （长公式在 iPad 竖屏下不至于把整段文字挤成一列）。
+   =========================================================== */
+.ink-math{display:inline}
+.ink-math.math-display,.ink-math[data-display="1"]{
+  display:block;margin:.45em 0;text-align:center;overflow-x:auto;overflow-y:hidden
+}
+.katex{font-size:1.06em}
+.katex-display{margin:.35em 0;overflow-x:auto;overflow-y:hidden;padding:1px 0}
+.katex-display>.katex{white-space:nowrap}
+/* 夜间主题下公式颜色跟随正文，不要被 KaTeX 自带的黑色盖住 */
+#pageText .katex,#scrollInner .katex{color:inherit}
+
+/* ===========================================================
+   R112 配色跟随：设置抽屉 / 翻译面板 / 正文译文块
+   -----------------------------------------------------------
+   变量由 js/reader.js 的 applySurfaceTheme() 写到 <html> 上：
+     · 书库里取「界面背景色」，书里取「阅读页底色」
+       —— 抽屉浮在书页上，跟书页统一才不刺眼；夜间/纯黑主题下也不会蹦出一块白板。
+   两套变量都由同一块底色按同色系派生（见 uiPalette），所以抽屉、译文、
+   翻译面板和书架是同一个视觉家族。
+   变量一个字都没写时（书库没设过背景、也不在阅读器里），下面每条都回落到
+   原来的 --ios-* 值 —— 外观零变化，不会「没动设置却被改了样」。
+   =========================================================== */
+
+/* ---- 设置抽屉 ---- */
+#settingsDrawer{background:var(--set-bg,var(--ios-bg));color:var(--set-fg,var(--ios-label))}
+#settingsDrawer .drawer-head{border-bottom-color:var(--set-line,var(--ios-separator))}
+#settingsDrawer .drawer-head h3{color:var(--set-fg,var(--ios-label))}
+#settingsDrawer .drawer-close{color:var(--set-accent,var(--ios-blue))}
+#settingsDrawer .drawer-body::-webkit-scrollbar-thumb{background:var(--set-scroll,var(--lib-scroll,rgba(0,0,0,.18)))}
+#settingsDrawer .set-title,
+#settingsDrawer .set-hint,
+#settingsDrawer .svc-status,
+#settingsDrawer .sr-val{color:var(--set-fg-dim,var(--ios-gray))}
+#settingsDrawer .set-info{color:var(--set-fg-dim,var(--ios-gray))}
+#settingsDrawer .set-info.on{background:var(--set-accent,var(--ios-blue));color:var(--set-accent-fg,#fff)}
+/* 卡片比抽屉底再抬一层，并补一圈 .5px 描边：底色很浅时两层明暗差不到 1%，
+   没有描边就分不清「分组卡片」和「面板底」。 */
+#settingsDrawer .set-card{
+  background:var(--set-card,var(--ios-bg));
+  box-shadow:0 0 0 .5px var(--set-line,transparent);
+}
+#settingsDrawer .set-row{border-bottom-color:var(--set-line,var(--ios-separator))}
+#settingsDrawer .set-row>.sr-label{color:var(--set-fg,var(--ios-label))}
+#settingsDrawer .set-note{background:var(--set-field,var(--ios-gray6));color:var(--set-fg-dim,var(--ios-gray))}
+#settingsDrawer .set-note b{color:var(--set-fg,var(--ios-label))}
+#settingsDrawer .chip{background:var(--set-field,var(--ios-gray6));color:var(--set-fg,var(--ios-label))}
+#settingsDrawer .chip.sel{background:var(--set-accent,var(--ios-blue));color:var(--set-accent-fg,#fff)}
+#settingsDrawer .seg-full{background:var(--set-field,var(--ios-gray6))}
+#settingsDrawer .seg-full .seg-btn{color:var(--set-fg,var(--ios-label))}
+#settingsDrawer .seg-full .seg-btn.active{background:var(--set-field-2,#fff);color:var(--set-fg,var(--ios-label))}
+#settingsDrawer .switch{background:var(--set-line,var(--ios-gray4))}
+#settingsDrawer .theme-swatch.sel{border-color:var(--set-accent,var(--ios-blue));box-shadow:0 0 0 2px var(--set-accent-soft,rgba(0,122,255,.25))}
+#settingsDrawer .color-dot.sel{border-color:var(--set-accent,var(--ios-blue))}
+#settingsDrawer .preview-box{border-color:var(--set-line,var(--ios-separator))}
+#settingsDrawer .btn-primary{background:var(--set-accent,var(--ios-blue));color:var(--set-accent-fg,#fff)}
+#settingsDrawer .btn-plain{background:var(--set-field,var(--ios-gray6));color:var(--set-accent,var(--ios-blue))}
+#settingsDrawer input[type=color].sw::-webkit-color-swatch{border-color:var(--set-line,rgba(0,0,0,.16))}
+
+/* 抽屉 / sheet 里的通用按钮：它们默认取 --lib-*（书架语境），在浮层里改成浮层这套 */
+.drawer .btn-primary,.sheet .btn-primary{background:var(--ov-accent,var(--ios-blue));color:var(--ov-accent-fg,#fff)}
+.drawer .btn-plain,.sheet .btn-plain{background:var(--ov-field,var(--ios-gray6));color:var(--ov-accent,var(--ios-blue))}
+.drawer .btn-plain.danger,.sheet .btn-plain.danger{color:var(--ov-red,var(--ios-red))}
+
+/* ---- 翻译面板 / 正文里的译文块 ---- */
+.translate-panel{
+  background:var(--tr-panel,var(--ios-gray6));border-left-color:var(--tr-line,var(--ios-separator));
+  color:var(--tr-fg,var(--ios-label));
+}
+.tp-head{background:var(--tr-accent,var(--ios-blue));color:var(--tr-accent-fg,#fff)}
+.tp-close{color:var(--tr-accent-fg,#fff)}
+.tp-row label,.tp-sep{color:var(--tr-fg-dim,var(--ios-gray))}
+.tp-row select,.tp-row input,.tp-ta,.tp-result,.tp-name-input{
+  background:var(--tr-card,#fff);color:var(--tr-fg,var(--ios-label));border-color:var(--tr-line,var(--ios-separator));
+}
+.tp-name-input:focus{border-color:var(--tr-accent,var(--ios-blue))}
+.tp-status{color:var(--tr-accent,var(--ios-blue))}
+.tr-item{border-bottom-color:var(--tr-line,var(--ios-separator))}
+.tr-src{color:var(--tr-fg,var(--ios-label))}
+.tr-dst{color:var(--tr-accent,var(--ios-blue-dark,#0060DF))}
+.tr-sec{border-bottom-color:var(--tr-line,var(--ios-separator))}
+.tr-sec-head{background:var(--tr-field,var(--ios-gray6));color:var(--tr-fg,var(--ios-label))}
+.tr-sec-caret,.tr-sec-meta{color:var(--tr-fg-dim,var(--ios-gray))}
+/* 扫描页「先识别再翻译」提示块：夜间也要跟面板底色/字色，不要留白块 */
+.tr-need-ocr p{color:var(--tr-fg-dim,var(--ios-gray))}
+.tr-need-ocr-btn{background:var(--tr-accent,var(--ios-blue));color:var(--tr-accent-fg,#fff)}
+.tr-need-ocr-btn[disabled]{background:var(--tr-field,var(--ios-gray6));color:var(--tr-fg-dim,var(--ios-gray))}
+/* 正文译文块：以前写死 #0060DF 蓝字 + 5% 蓝底，夜间/纯黑主题上直接看不见 */
+.tr-page-tr{
+  background:var(--tr-accent-soft,rgba(0,96,223,.05));
+  color:var(--tr-accent,var(--ios-blue-dark,#0060DF));
+  border-top-color:var(--tr-line,var(--ios-separator));
+}
+.tr-page-tr::before{color:var(--tr-fg-dim,var(--ios-gray))}
+.tp-note{background:var(--tr-field,var(--ios-gray6));color:var(--tr-fg,var(--ios-label))}
+.tp-note-sub{color:var(--tr-fg-dim,var(--ios-gray))}
+.tp-names-hint{background:var(--tr-field,var(--ios-gray6));color:var(--tr-fg-dim,var(--ios-gray))}
+.tp-name-del{background:var(--tr-field,var(--ios-gray6))}
+.tp-feature{background:var(--tr-field,var(--ios-gray6));color:var(--tr-fg,var(--ios-label))}
+/* 引擎安装 / 卸载弹窗（浮层）同样跟着走，夜间主题上不再是白板 */
+.tp-modal{background:var(--tr-card,#fff)}
+.tp-modal h3,.tp-modal-body{color:var(--tr-fg,var(--ios-label))}
+.tp-modal-body b{color:var(--tr-accent,var(--ios-blue))}
+.tp-modal-log{background:var(--tr-field,var(--ios-gray6));color:var(--tr-fg,var(--ios-label))}
+.tp-modal-close{color:var(--tr-fg-dim,var(--ios-gray))}
+.tp-modal-close:hover{background:var(--tr-field,var(--ios-gray6))}
+.tp-progress-bar{background:var(--tr-field,var(--ios-gray6))}
+.tp-progress-fill{background:var(--tr-accent,var(--ios-blue))}
+.tp-progress-meta{color:var(--tr-fg-dim,var(--ios-gray))}
+.tp-engine-status.installing,.tp-engine-status a{color:var(--tr-accent,var(--ios-blue))}
+/* 面板/弹窗里的按钮：主按钮跟强调色，次按钮跟控件底（否则夜间面板里会蹦出浅灰块） */
+.translate-panel .btn-primary,.tp-modal .btn-primary{background:var(--tr-accent,var(--ios-blue));color:var(--tr-accent-fg,#fff)}
+.translate-panel .btn-plain,.tp-modal .btn-plain{background:var(--tr-field,var(--ios-gray6));color:var(--tr-accent,var(--ios-blue))}
+
+/* ===========================================================
+   R130（第 1/2 条）：浮层里的 iOS 语义色改成「跟着当前底色派生」
+   -----------------------------------------------------------
+   以前浮层里很多地方直接写 --ios-gray6 / --ios-blue / --ios-label：
+   · 夜间 / 纯黑主题下，.share-scope、.backup-stat、.mk-pick 这些内框还是浅灰底
+     （--ios-gray6 = #F2F2F7），字却已经跟着主题变浅 → 白框里的字看不清；
+   · 蓝紫等彩色界面底色上，死蓝 #007AFF、死灰 #8E8E93 的对比度会掉到 2 以下。
+   做法是在容器上重定义这批变量（而不是逐个改选择器），容器里所有用到 --ios-*
+   的地方一起跟着走；没设自定义底色时回落到原来的 iOS 亮色，默认外观零变化。
+   =========================================================== */
+.sheet,.sheet-card,.drawer{
+  --ios-label:var(--ov-fg,#1C1C1E);
+  --ios-label2:var(--ov-fg,#1C1C1E);
+  --ios-gray:var(--ov-fg-dim,#6C6C70);
+  --ios-gray2:var(--ov-fg-dim,#8A8A8E);
+  --ios-gray3:var(--ov-line,#C7C7CC);
+  --ios-gray4:var(--ov-line,#D1D1D6);
+  --ios-gray5:var(--ov-line,#E5E5EA);
+  --ios-gray6:var(--ov-field,#F2F2F7);
+  --ios-bg:var(--ov-card,#FFFFFF);
+  --ios-bg-2:var(--ov-field-2,#F2F2F7);
+  --ios-group-bg:var(--ov-field,#F2F2F7);
+  --ios-fill:var(--ov-field,#F2F2F7);
+  --ios-blue:var(--ov-accent,#007AFF);
+  --ios-blue-dark:var(--ov-accent,#0060DF);
+  --ios-separator:var(--ov-line,rgba(60,60,67,.29));
+}
+/* 设置抽屉有自己那套 --set-*，优先吃它 */
+#settingsDrawer{
+  --ios-label:var(--set-fg,var(--ov-fg,#1C1C1E));
+  --ios-label2:var(--set-fg,var(--ov-fg,#1C1C1E));
+  --ios-gray:var(--set-fg-dim,var(--ov-fg-dim,#6C6C70));
+  --ios-gray2:var(--set-fg-dim,var(--ov-fg-dim,#8A8A8E));
+  --ios-gray3:var(--set-line,var(--ov-line,#C7C7CC));
+  --ios-gray4:var(--set-line,var(--ov-line,#D1D1D6));
+  --ios-gray5:var(--set-line,var(--ov-line,#E5E5EA));
+  --ios-gray6:var(--set-field,var(--ov-field,#F2F2F7));
+  --ios-bg:var(--set-card,var(--ov-card,#FFFFFF));
+  --ios-bg-2:var(--set-field-2,var(--ov-field-2,#F2F2F7));
+  --ios-fill:var(--set-field,var(--ov-field,#F2F2F7));
+  --ios-blue:var(--set-accent,var(--ov-accent,#007AFF));
+  --ios-blue-dark:var(--set-accent,var(--ov-accent,#0060DF));
+  --ios-separator:var(--set-line,var(--ov-line,rgba(60,60,67,.29)));
+}
+/* 翻译面板 / 它的弹窗吃 --tr-* */
+.translate-panel,.tp-modal{
+  --ios-label:var(--tr-fg,#1C1C1E);
+  --ios-label2:var(--tr-fg,#1C1C1E);
+  --ios-gray:var(--tr-fg-dim,#6C6C70);
+  --ios-gray2:var(--tr-fg-dim,#8A8A8E);
+  --ios-gray6:var(--tr-field,#F2F2F7);
+  --ios-bg:var(--tr-card,#FFFFFF);
+  --ios-bg-2:var(--tr-card,#F2F2F7);
+  --ios-fill:var(--tr-field,#F2F2F7);
+  --ios-blue:var(--tr-accent,#007AFF);
+  --ios-blue-dark:var(--tr-accent,#0060DF);
+  --ios-separator:var(--tr-line,rgba(60,60,67,.29));
+  --ios-accent-fg:var(--tr-accent-fg,#FFFFFF);
+}
+/* 选中态按钮（笔记面板的「样式」片）：以前死写 --ios-blue 底 + #fff 字，
+   彩色底上蓝块自己就糊成一片；改成强调色 + 算出来的前景色 */
+.sheet .mk-pick.sel{background:var(--ov-accent,var(--ios-blue));color:var(--ov-accent-fg,#fff)}
+
+/* R130（第 6 条）：「定位」到某条标记后闪一下，提示到底落在哪儿。
+   只动 outline / 底色，不动排版，所以不会让文字跳行。 */
+.mk-flash{
+  animation:mkFlash 1.2s ease-out 1;
+  border-radius:3px;
+}
+@keyframes mkFlash{
+  0%   {box-shadow:0 0 0 2px rgba(255,159,10,.95), 0 0 12px 4px rgba(255,159,10,.55)}
+  55%  {box-shadow:0 0 0 2px rgba(255,159,10,.65), 0 0 10px 3px rgba(255,159,10,.30)}
+  100% {box-shadow:0 0 0 2px rgba(255,159,10,0), 0 0 0 0 rgba(255,159,10,0)}
+}
+
+/* R131（第 5 条）：翻译一开跑就常驻顶部一条「翻译中…」（含滑动触发的实时补译），
+   全部请求结束自动消失。不塞进顶栏 —— 顶栏会收起，收起来就看不见还在翻了。 */
+.tr-busy{
+  position:absolute; z-index:58;
+  top:calc(10px + env(safe-area-inset-top,0px)); left:50%; transform:translateX(-50%);
+  display:flex; align-items:center; gap:7px;
+  padding:5px 13px; border-radius:999px;
+  font-size:12.5px; line-height:1; letter-spacing:.01em;
+  background:rgba(22,22,26,.78); color:#FFF;
+  box-shadow:0 2px 12px rgba(0,0,0,.22);
+  -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+  pointer-events:none;
+  animation:trBusyIn .16s ease-out;
+}
+.tr-busy[hidden]{display:none}
+.tr-busy::before{
+  content:''; width:7px; height:7px; border-radius:50%; background:#34C759;
+  animation:trBusyDot 1s ease-in-out infinite;
+}
+@keyframes trBusyDot{0%,100%{opacity:.35;transform:scale(.85)}50%{opacity:1;transform:scale(1)}}
+@keyframes trBusyIn{from{opacity:0;transform:translate(-50%,-5px)}to{opacity:1;transform:translate(-50%,0)}}
+
+/* R132（第 2 条）：顶栏（「共享 / 翻译」那一栏）也要看得见在翻 ——
+   上面那条胶囊挂在阅读区里，用户盯着顶栏时看不见，得在这里也亮一个。
+   顶栏会随工具栏收起，所以两条并存：顶栏看得见就看顶栏，收起来还有胶囊。 */
+.bar-tr-busy{
+  flex:none; display:inline-flex; align-items:center; gap:5px;
+  margin-left:8px; padding:3px 9px; border-radius:999px;
+  font-size:11.5px; line-height:1.35; white-space:nowrap;
+  /* 浅色顶栏（默认）：深一档的绿，对比度 ≥4.5:1 */
+  background:rgba(0,140,60,.12); color:#0A7A34;
+  animation:barTrIn .16s ease-out;
+}
+.bar-tr-busy[hidden]{display:none}
+.reader-bar.dark .bar-tr-busy{background:rgba(52,199,89,.18); color:#4ADE80}
+.bar-tr-busy::before{
+  content:''; width:6px; height:6px; border-radius:50%; background:currentColor;
+  animation:trBusyDot 1s ease-in-out infinite;
+}
+@keyframes barTrIn{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:translateY(0)}}
+/* ============================================================
+   装进安卓壳（APK）里：body.in-app
+   ------------------------------------------------------------
+   原型控制条、假状态栏（9:41 / ●●● Wi-Fi）都是给浏览器演示用的，
+   在真机上只会白占 24px 并且露馅。这里一并收掉，并把外壳的圆角/阴影去掉，
+   让页面真正铺满屏幕（尺寸由 applyDevice('full') 负责）。
+   注意：这里不改任何业务样式，只做「外壳归零」。
+   ============================================================ */
+body.in-app .proto-bar{display:none}
+body.in-app #statusBar{display:none !important}
+body.in-app .stage{padding:0}
+body.in-app .ipad{border-radius:0;box-shadow:none;padding:0;background:transparent}
+body.in-app .ipad-screen{border-radius:0}
+/* 手机档还额外套了 30px 圆角（.ipad.phone .ipad-screen，优先级更高），这里要显式压掉 */
+body.in-app .ipad.phone .ipad-screen,
+body.in-app .ipad.phone{border-radius:0}
+body.in-app .top-bar{height:52px;padding-top:8px}
+body.in-app .lib-header{padding-top:14px}
+/* 手机上没有假状态栏了，抽屉和阅读器都从屏幕顶开始，安全区交给系统 */
+body.in-app .lib-sidebar{padding-top:16px}
+
+/* iOS「添加到主屏幕」（body.ios-home，由 main.js 按 navigator.standalone 加）：
+   顶部交给系统状态栏（apple-mobile-web-app-status-bar-style=default 会把内容推开），
+   但**底部 home 指示条会盖住底栏最后一行** —— viewport-fit=cover 下 env() 才有值，
+   所以只给底栏补一段底衬，不动别的。 */
+body.ios-home .bottom-bar{height:auto;min-height:58px;padding-bottom:env(safe-area-inset-bottom,0px)}
+body.ios-home .toast{bottom:calc(76px + env(safe-area-inset-bottom,0px))}

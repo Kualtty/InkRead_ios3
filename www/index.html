@@ -1,0 +1,743 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="UbPFGuZS6OqdpPRNqPqZJn">
+<head data-page-node-id="djtcVdH34HT01gc0pmucDd">
+<meta charset="UTF-8" data-page-node-id="1GRmCSd7BgVDLXxcCf2PPi">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" data-page-node-id="CU4nKdaECwEg6J5z6hihSN">
+<meta http-equiv="Pragma" content="no-cache" data-page-node-id="6RiGDR9OWG1pfhBhoYZ3gV">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" data-page-node-id="X1ukQHZrACgO13F4G7yaAR">
+<meta name="description" content="墨阅 InkReader —— iPad 阅读器交互原型：TXT / Word / PDF / EPUB / 漫画，标记、笔记、手写、播读、局域网加密共享。纯前端，无构建步骤。" data-page-node-id="h3InDI6v9k5WYpAPBV3KFw">
+<meta name="theme-color" content="#2E5A88" data-page-node-id="nXA0kFbHTBiN6T1tKYzA11">
+<meta name="apple-mobile-web-app-capable" content="yes" data-page-node-id="BsQJ10XawzldbMckpWOnNC">
+<meta name="apple-mobile-web-app-title" content="墨阅" data-page-node-id="k2Zxe7dUqhw1hVtZdF2cdx">
+<!-- iOS「添加到主屏幕」：状态栏用 default，系统会把页面内容推到状态栏下方，
+     不用自己算刘海高度（black-translucent 才会全屏铺满、压住内容）。 -->
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>墨阅 InkReader · iPad 原型</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml" data-page-node-id="h9H8fc44fgfANMgLNEzxhl">
+<!-- ⚠ iOS 不认 SVG 的 apple-touch-icon：给 .svg 会退化成「网页截图」当图标。
+     必须是 PNG（180×180 够用），由 tools/make-icons.js 从 icon.svg 生成。 -->
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+<link rel="manifest" href="manifest.json" data-page-node-id="Q0RW2AZbl1wQVKxKrpu50T">
+<link rel="stylesheet" href="css/style.css?v=20261121r177" data-page-node-id="agNRnV5U7SnCvDg419eixa">
+<!-- 数学公式（KaTeX，全部文件在 vendor/katex/，断网也能用） -->
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
+</head>
+<body data-page-node-id="gn2aXwv3gNsSXWVGoMtuBq">
+
+<!-- ============ 后端未托管提示（仅当页面不是由 serve.py 托管时显示） ============ -->
+<div id="backendBanner" class="backend-banner" hidden>
+  <span class="bb-text">⚠️ 未检测到本地服务（serve.py）：翻译 / 查词 / 共享不可用。点「🔄 重启服务」，或双击桌面 InkReader 重开。</span>
+  <button id="backendBannerRestart" class="bb-btn" type="button">🔄 重启服务</button>
+  <button id="backendBannerStop" class="bb-btn bb-btn-danger" type="button">⏹ 停止后台服务</button>
+  <button id="backendBannerRecover" class="bb-btn" type="button" hidden>🔄 重连服务</button>
+  <a id="backendBannerRevive" class="bb-btn bb-btn-revive" href="inkreader://start" hidden>🖥 用桌面程序拉起</a>
+  <button id="backendBannerClose" class="bb-close" type="button">知道了</button>
+</div>
+<!-- 本地代理（/proxy）未检测到：部分站点（汉典/有道/维基等）无法内嵌查看，查词/翻译的小窗也会失败。
+     常驻显示，不再只是闪一下就消失（修 #11）。 -->
+<div id="proxyBanner" class="proxy-banner" hidden>
+  <span class="pb-text">⚠️ 未检测到本地代理：部分站点无法内嵌，查词 / 翻译小窗不可用。请在项目目录运行 <code>python tools/serve.py</code> 后访问 127.0.0.1:8123。</span>
+  <button id="proxyBannerClose" class="pb-close" type="button">知道了</button>
+</div>
+
+<!-- ============ 顶部：原型控制条（非 App 部分） ============ -->
+<div class="proto-bar" data-page-node-id="vQDqmBXsSNOYFA92t7qHaS">
+  <div class="proto-title" data-page-node-id="UiXEzfs4WjBmdfBSNk2nzG">墨阅 InkReader · Web 交互原型</div>
+  <div class="proto-seg" id="deviceSeg" data-page-node-id="iqDpFrwDZumGRabeHMlUoe">
+    <button class="seg-btn" data-kind="phone" data-w="390" data-h="844" title="手机窗口：390×844，窗口装不下时等比缩小" data-page-node-id="9QbI5hl5Q73zzgNium2Jf4">手机 6.1"</button>
+    <button class="seg-btn active" data-w="1024" data-h="768" title="iPad 横屏 10.9 英寸" data-page-node-id="tT3MDv4EkrkfpBcvG2Qcei">iPad 横 10.9"</button>
+    <button class="seg-btn" data-w="820" data-h="1180" title="iPad 竖屏 11 英寸" data-page-node-id="89m3mD5VhoqBJHaDst2jM9">iPad 竖 11"</button>
+    <button class="seg-btn" data-w="1366" data-h="1024" title="iPad Pro 横屏 12.9 英寸" data-page-node-id="bKVqKdrDQFVCYx4oSlCo0t">iPad Pro 横 12.9"</button>
+    <button class="seg-btn" data-kind="auto" data-w="0" data-h="0" title="自适应窗口：跟着浏览器窗口大小走，保留外壳圆角" data-page-node-id="iqDpFrwDZumGRabeHMlUox">自适应窗口</button>
+    <button class="seg-btn" data-kind="full" data-w="0" data-h="0" title="自适应全屏：贴边铺满，不留边距" data-page-node-id="iqDpFrwDZumGRabeHMlUoy">自适应全屏</button>
+  </div>
+  <label class="proto-check" data-page-node-id="QBbu2QQ86dnux1Y6mKtYhq"><input type="checkbox" id="showStatusBar" checked data-page-node-id="8FuEgkXCPz91ZSdHAJs6yn"> 显示状态栏</label>
+  <button class="proto-btn" id="resetDataBtn" data-page-node-id="sxDjS0YXPUBadz5wwHWLS2">清空本地数据</button>
+  <span class="proto-hint" id="protoHint" data-page-node-id="NcAOwIuT4S2tlAARgx4Qeq"></span>
+</div>
+
+<!-- ============ iPad 设备外壳 ============ -->
+<div class="stage" id="stage" data-page-node-id="jqWrhyUncvj6NCPHKOejGV">
+  <div class="ipad" id="ipad" data-page-node-id="DoW1hnwmED0PDSls2HBbRo">
+    <div class="ipad-screen" data-page-node-id="IysFSWnDgJcSZtdnr2pDYb">
+
+      <!-- 状态栏 -->
+      <div class="status-bar" id="statusBar" data-page-node-id="ziKGNdhUPKY62Vh6tdGpNs">
+        <span class="sb-time" id="sbTime" data-page-node-id="y45C1euwWUUajDcZK7Gor0">9:41</span>
+        <span class="sb-right" data-page-node-id="4i6g6LMEEBoJg9B4wLXBAY">
+          <span class="sb-icon" data-page-node-id="V3DG3DlM5vlV5gWJJbCgET">●●●</span>
+          <span class="sb-icon" data-page-node-id="UUIBACPXNQDn6rmYG8oBqa">Wi-Fi</span>
+          <span class="sb-battery" data-page-node-id="5svJibNb62YV7jpg1FgQxa"></span>
+        </span>
+      </div>
+
+      <!-- ================= 书架 ================= -->
+      <section class="view view-library active" id="libraryView" data-page-node-id="Yfzo7kG4d4oSXOL8rFCEX7">
+        <!-- 自定义背景（设置 → 界面背景）：铺满书架页，透明度可调，下面是背景色 -->
+        <div class="lib-bg" id="libBg" hidden></div>
+        <div class="lib-sidebar" id="libSidebar" data-page-node-id="mIVQntiACmDoacVeXObErg">
+          <div class="lib-brand" data-page-node-id="OBJbiQfpMcLTGM8TuHnfbd">
+            <span class="lib-logo" data-page-node-id="3R9x0ACqBwxukO3HoazCmA">墨</span>
+            <span class="lib-brand-text" data-page-node-id="GShfzlCKPRwNIJZBHJEBTs">墨阅</span>
+          </div>
+          <nav class="lib-nav" data-page-node-id="G5D2Vk7PaAxfPWOP2HyRxo">
+            <button class="nav-item active" data-filter="all" data-page-node-id="m5fd8VmdZDQzs1CrWbPWjb"><span class="nav-ico" data-page-node-id="MTnHKlzBPFs3NTsIJpXPaz">📚</span>全部</button>
+            <button class="nav-item" data-filter="reading" data-page-node-id="oGLqzXzxRBRjxngAm6hH9p"><span class="nav-ico" data-page-node-id="DQ3amsEBy2xFIvhiF6atER">📖</span>在读</button>
+            <button class="nav-item" data-filter="fav" data-page-node-id="E1md8RIDUfl34BD9zJhSqs"><span class="nav-ico" data-page-node-id="mMk32uN2UcZrM4uOvDMbZE">⭐</span>收藏</button>
+            <button class="nav-item" data-filter="text" data-page-node-id="WSjfCSAb5K903514Ifug8c"><span class="nav-ico" data-page-node-id="TZK50Ihip7B0vqBNSpjPjZ">📝</span>文本小说</button>
+            <button class="nav-item" data-filter="comic" data-page-node-id="6l1Gm9PYqaL1tFGbCelSVi"><span class="nav-ico" data-page-node-id="iX6JFwB1pZFBotCnNXvDuz">🖼️</span>漫画</button>
+            <button class="nav-item" data-filter="pdf" data-page-node-id="kn4slIFNBmQUnYTctCrSGr"><span class="nav-ico" data-page-node-id="ISlOrfKaTd4Yh8LphDT4jC">📕</span>PDF</button>
+          </nav>
+          <div class="lib-coll-head" data-page-node-id="FIkGbf53n7Xve71TrZEFWk">
+            <span data-page-node-id="Ze0PrtIdJv582LuAKaZMOf">收藏夹</span>
+            <button class="coll-add" id="collManageBtn" title="批量整理：勾选 / 上下移 / 批量删除" data-page-node-id="collManageBtn">✎</button>
+            <button class="coll-add" id="addCollBtn" title="新建收藏夹" data-page-node-id="HnmGHtepmfecSGK14nQoXB">＋</button>
+          </div>
+          <nav class="lib-nav" id="collNav" data-page-node-id="Hj1QuYsSEg5NRK0uHLqG3y"></nav>
+          <div class="lib-sidebar-foot" data-page-node-id="RHlfYgdEOHy8MR3mCN4Tz5">
+            <button class="import-btn primary" id="importBtn" data-page-node-id="5mqRNRvBRythdrNmNOBllR">
+              <span class="plus" data-page-node-id="F5QvVw0vqEXsqSpwUttSBY">＋</span> 导入图书
+            </button>
+            <button class="import-btn" id="importFolderBtn" title="选择整个文件夹一次性导入（自动按文件/子目录拆成多本）">
+              <span class="plus">📁</span> 导入文件夹
+            </button>
+            <div class="lib-stats" id="libStats" data-page-node-id="AGSWoRI68GVQiIGzZHbkQs">0 本</div>
+            <div class="lib-ver" id="libVer" data-page-node-id="iSgqk8Cm0ScJe7WElIRTG0"></div>
+            <button class="lib-uninstall" id="uninstallBtn" title="卸载应用 / 只清除数据（两件事分开）" data-page-node-id="EQ6XTF5EuRFHwscOCgBbFt">卸载 / 清除</button>
+            <button class="lib-share" id="backupBtn" title="整库备份与恢复" data-page-node-id="VpVulE7iNR46zAuHrNlvbB">💾 备份</button>
+            <button class="lib-share" id="shareBtn" title="局域网加密共享" data-page-node-id="sTW9473hipGIPSCCWuP77t">📡 共享</button>
+          </div>
+        </div>
+
+        <!-- 小屏上侧栏改成抽屉：默认收起，点左上角 ☰ 滑出（86px 图标栏连文件夹名都放不下） -->
+        <div class="lib-side-scrim" id="libSideScrim" hidden></div>
+
+        <div class="lib-main" data-page-node-id="wMVSZU8XwcwsA794l5XHHX">
+          <div class="lib-header" data-page-node-id="mjTAH1HajFUcgtCzIvJlxT">
+            <div class="lib-title-row">
+              <button class="lib-menu" id="libMenuBtn" title="分类 / 收藏夹 / 导入">☰</button>
+              <button class="lib-back" id="libBack" hidden title="返回上一级">←</button>
+              <h1 class="lib-h1" id="libTitle" data-page-node-id="7vZqrnxkGzgGDY5UXbHvhO">书库</h1>
+            </div>
+            <div class="lib-crumb" id="libCrumb" hidden></div>
+            <div class="lib-tools" data-page-node-id="w7z2HWgyzKuGMlF2i1t3iF">
+              <div class="search-field" data-page-node-id="guy8utBKEgw6dsuqRnJMXC">
+                <span class="search-ico" data-page-node-id="iahV99toV9AZqr3cvTa65C">🔍</span>
+                <input type="search" id="searchInput" placeholder="搜索书名" data-page-node-id="awtFs1mIJZi7cICC8VX30F">
+              </div>
+              <div class="seg-ctrl" id="sortSeg" data-page-node-id="ZmOKcWY606eBO74YPkhAsN">
+                <button class="seg-btn active" data-sort="recent" data-page-node-id="JJ8CZNDngwGArc7A5Rs4BC">最近</button>
+                <button class="seg-btn" data-sort="added">加入</button>
+                <button class="seg-btn" data-sort="title" data-page-node-id="TUxPQCsWX6jG3F6sDyIbGM">书名</button>
+                <button class="seg-btn" data-sort="progress" data-page-node-id="fAu8cfrldh6CvsYHd5wmCD">进度</button>
+                <!-- 「手动」只在收藏 / 收藏夹里出现：那是拖动排出来的次序，别处没有 -->
+                <button class="seg-btn" data-sort="manual" hidden>手动</button>
+              </div>
+              <button class="select-btn" id="sortDirBtn" title="倒序（点一下换成相反的先后）">↓</button>
+              <button class="select-btn" id="selectBtn" data-page-node-id="WySevRIcm6Fra6S3doPvL4">☑︎ 选择</button>
+              <button class="select-btn" id="libSettingsBtn" title="阅读设置（主题 / 字体 / 翻页 / 漫画）">Aa 设置</button>
+            </div>
+          </div>
+          <div class="lib-scroll" data-page-node-id="sY4fySoCVFXS7yQHYE44Zk">
+            <div class="continue-row" id="continueRow" hidden data-page-node-id="SFQi9DAbWazEQFIc08PBAu"></div>
+            <div class="tag-bar" id="tagBar" hidden data-page-node-id="tagBarNode"></div>
+            <div class="book-grid" id="bookGrid" data-page-node-id="Aue8dDsyzTgd9zitOFURoy"></div>
+            <div class="empty-state" id="libEmpty" data-page-node-id="5I33CO1gxYMVibHVxdu3cI">
+              <div class="empty-ico" data-page-node-id="nhg6QwdZh9n5aOMgflprLf">📥</div>
+              <div class="empty-title" data-page-node-id="O4Ug6RwriDpjC1tO2KtCyk">书库是空的</div>
+              <div class="empty-sub" data-page-node-id="92QtJDHZI7VgzNLw9t3QcX">点击左下角「导入图书」添加 TXT / PDF / 图片 / ZIP<br data-page-node-id="IGhXSSRyzD2L76X3jJL9OM">压缩包里可以同时放好几本书、好几本漫画（也可再套 .zip / .cbz）</div>
+              <button class="btn-primary" id="demoBtn" data-page-node-id="0dxKDedMIwYb3iolsfxmaC">添加示例书籍</button>
+            </div>
+            <!-- 「有书但被搜索/筛选筛没了」是另一种空，单独一个节点，
+                 避免用 innerHTML 覆盖上面那个（会弄丢「添加示例书籍」按钮的事件） -->
+            <div class="empty-state" id="libNoMatch" hidden data-page-node-id="mX1k8xAgEeiMVi3rBNIKPf">
+              <div class="empty-ico" data-page-node-id="Gi1AhpKmeFTC1APxOCSQI9">🔍</div>
+              <div class="empty-title" data-page-node-id="o2WVhsSHx9LnCzsFVon6ku">没有匹配的书</div>
+              <div class="empty-sub" id="libNoMatchSub" data-page-node-id="Lp17NSx1HomhjmQgst5S20"></div>
+              <button class="btn-primary" id="libClearFilter" data-page-node-id="GNR123tby1u3Xaby71YQCO">清除搜索 / 筛选</button>
+            </div>
+          </div>
+
+          <!-- 批量操作条（进入选择模式后出现） -->
+          <div class="bulk-bar" id="bulkBar" hidden data-page-node-id="SpSVCtXuidq2sbDuTNCmi6">
+            <button class="bulk-btn" id="bulkAllToggle" data-page-node-id="N4Mcuotaa24d9o0L22ch66">全选 / 全不选</button>
+            <button class="bulk-btn" id="bulkInvert" data-page-node-id="dXOJ77tHMce98VIlorDQFn">反选</button>
+            <span class="bulk-count" id="bulkCount" data-page-node-id="hqoiul4djALFomm7nl8Bpv">已选 0 本</span>
+            <span class="bulk-spacer" data-page-node-id="X0uxVJShp4yUXPfaobOGft"></span>
+            <button class="bulk-btn" id="bulkMove" data-page-node-id="OGJGF0rvIVKqqTN7X9IGKr">🗂️ 移动到…</button>
+            <button class="bulk-btn" id="bulkMerge" data-page-node-id="qUKC9Qgyy8PkBMoYKpHArG">🔗 合并漫画</button>
+            <button class="bulk-btn" id="bulkFav" data-page-node-id="ZCdlwVtj1vVzAlZOEroKij">☆ 收藏</button>
+            <button class="bulk-btn" id="bulkTag" data-page-node-id="bulkTagNode">🏷️ 加标签</button>
+            <button class="bulk-btn" id="bulkTop" hidden>⤒ 置顶</button>
+            <button class="bulk-btn" id="bulkUp" hidden>↑ 上移</button>
+            <button class="bulk-btn" id="bulkDown" hidden>↓ 下移</button>
+            <button class="bulk-btn" id="bulkBackup" data-page-node-id="bqjbm1SwjDApq3AA6OEEZ5">💾 备份所选</button>
+            <button class="bulk-btn" id="bulkShare" data-page-node-id="Gcf7EZl4b6m69aP1cNBr49">📡 共享所选</button>
+            <button class="bulk-btn danger" id="bulkDel" data-page-node-id="yLCEJ9BYhZlFvM6CKgds4G">🗑 删除</button>
+            <button class="bulk-btn" id="bulkExit" data-page-node-id="UuwFqbmsrXlXbTwGKpt3Jw">完成</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 阅读器 ================= -->
+      <section class="view view-reader" id="readerView" data-page-node-id="ca51Ubn2bj7AzxlUf7DW5Q">
+        <!-- 内容层 -->
+        <div class="reader-content" id="readerContent" data-page-node-id="LSHHYP8vtOEQYzq5mATxtH">
+          <!-- R131（第 5 条）：只要有翻译请求在路上（含滑动时的实时补译）就常驻这一条，
+               全部结束自动消失。不跟顶栏一起隐藏，否则收起工具栏就看不见"还在翻"了。 -->
+          <div class="tr-busy" id="trBusy" hidden>翻译中…</div>
+          <!-- TXT 分页 -->
+          <div class="page-layer" id="txtLayer" data-page-node-id="rrqbDsXhDipVy3EE3Sm7Qo">
+            <div class="page-text" id="pageText" data-page-node-id="dec3qvcB5aEsizJnAuhVTj"></div>
+          </div>
+          <!-- TXT 滚动（上下模式） -->
+          <div class="scroll-layer" id="scrollLayer" data-page-node-id="EH4WdH8CFqs11Aebpm9xLw">
+            <div class="scroll-inner" id="scrollInner" data-page-node-id="vId4DQNbc2ByqqhyaQtlBT"></div>
+          </div>
+          <!-- PDF（连续卷轴：整本一条长卷，每页一个 canvas，懒渲染） -->
+          <div class="page-layer" id="pdfLayer" data-page-node-id="BjfWgQiuE5xu29rHP8Y8zp">
+            <div class="pdf-stack" id="pdfStack" data-page-node-id="RIVgEu2RljuFVXvebuQ2Dd"></div>
+          </div>
+          <!-- PDF 缩放 / 适应屏幕（仅 PDF 显示） -->
+          <div class="pdf-zoom-ctl" id="pdfZoomCtl" hidden data-page-node-id="RJCxcfFelDwsWOQIYuPn5W">
+            <button class="pz-btn" id="pdfZoomOut" title="缩小" data-page-node-id="clIFFG9NyLYUggNknRzSmF">－</button>
+            <button class="pz-btn pz-fit" id="pdfZoomFit" title="适应屏幕（整页塞满）" data-page-node-id="IxFTIFGIMBHA9SgK0vHK0B">适应 <span id="pdfZoomVal" data-page-node-id="Dp0HvcTRaaSHaDrQBV5l33">100%</span></button>
+            <button class="pz-btn" id="pdfZoomIn" title="放大（可上下滚动看细节）" data-page-node-id="BZMOv9uHlQv2i7Vh8KnoCD">＋</button>
+            <button class="pz-btn pz-text" id="pdfTextToggle" title="显示 / 隐藏页面文字层（含 OCR 层），用来核对文字位置和划词范围。OCR 抽屉里的勾选只管那页正文要不要展开，互不影响">A</button>
+          </div>
+          <!-- 漫画缩放 / 适应（仅漫画显示；与上面 PDF 控件样式一致） -->
+          <div class="pdf-zoom-ctl" id="comicZoomCtl" hidden>
+            <button class="pz-btn" id="comicZoomOut" title="缩小">－</button>
+            <button class="pz-btn pz-fit" id="comicZoomFit" title="适应（100%）">适应 <span id="comicZoomVal">100%</span></button>
+            <button class="pz-btn" id="comicZoomIn" title="放大（可拖动看细节）">＋</button>
+            <button class="pz-btn pz-text" id="comicTextToggle" title="显示 / 隐藏识别出的文字层（把透明的文字块显示成浅底深字，用来核对识别得对不对、范围准不准）">A</button>
+          </div>
+          <!-- 图片/漫画：内容由 renderComicPage() 生成（单页或双页） -->
+          <div class="page-layer" id="imgLayer" data-fit="contain" data-spread="false" data-page-node-id="VobqFfCsYoLkHZ1nH79AP5"></div>
+          <!-- 手写画布 -->
+          <canvas class="ink-canvas" id="inkCanvas" data-page-node-id="XDc9Mn4APaN63mZu51FGyK"></canvas>
+          <!-- 朗读时当前句高亮 -->
+          <div class="tts-hl" id="ttsHl" hidden data-page-node-id="CWbYWmpCtn6DEgGO9WIMoV"></div>
+          <!-- 划词浮层 -->
+          <div class="sel-popover" id="selPopover" hidden data-page-node-id="PC1JylSwB9UGwTrPhMJUHB">
+            <div class="sel-row" id="selMarks" data-page-node-id="pfvl2OXtAUlKeX8I25Y330">
+              <button class="sel-mark" data-act="mark" data-style="highlight" title="高亮" data-page-node-id="eXcY7ySk6szzRC4p8oUfCo"><i class="mk-ico mk-ico-hl" data-page-node-id="UpfkmfW0pXb4HihAY8sZaP"></i></button>
+              <button class="sel-mark" data-act="mark" data-style="underline" title="下划线" data-page-node-id="DELcL2p2RVtsGAxtgzYQsg"><i class="mk-ico mk-ico-ul" data-page-node-id="HH2z8IbqMZGc1T7xldQz6t"></i></button>
+              <button class="sel-mark" data-act="mark" data-style="strike" title="删除线" data-page-node-id="xL53AliD9mRVPJsRCx1oHI"><i class="mk-ico mk-ico-st" data-page-node-id="n8vwclvyQ3EnFGIgU4rYSg"></i></button>
+              <button class="sel-mark" data-act="mark" data-style="wavy" title="波浪线" data-page-node-id="Wi28zzyUnouArMnuFBZqYv"><i class="mk-ico mk-ico-wv" data-page-node-id="wAPqYnTl6WVseaAHkDYXJb"></i></button>
+              <button class="sel-mark" data-act="mark" data-style="bold" title="粗体" data-page-node-id="byDZiusgh26qTie56YZ7fF"><i class="mk-ico mk-ico-bd" data-page-node-id="MnawKCKHkV3WiTuzNcgO2Q"></i></button>
+            </div>
+            <div class="sel-row sel-colors" id="selColors" data-page-node-id="J31MV336h2aXEOUfBNAKPN"></div>
+            <div class="sel-row" data-page-node-id="uEAlP3NHDgCawmxCYPUoRi"><span class="sel-tip" id="selTip" data-page-node-id="aZyWGJSrdS6CkZEGSqOrbf">本段暂无标记</span></div>
+            <div class="sel-row" data-page-node-id="GsovokqVjfjWBmIGyvEUKa">
+              <button data-act="note" data-page-node-id="lMFA9zAlr83FQZLPEPwNlu">笔记</button>
+              <button data-act="clearmark" title="删掉这片文字上的标记（带笔记的会保留，笔记不会跟着丢）">清除标记</button>
+              <button data-act="dict" data-page-node-id="2gIhGppEPfHSKcXMoBr0hh">查词</button>
+              <button data-act="translate" data-page-node-id="trnslbtn">翻译</button>
+              <button data-act="system" id="selSystemBtn" hidden title="交给手机/平板的系统翻译、词典或分享（不用墨阅的引擎）">系统翻译</button>
+              <button data-act="search" data-page-node-id="tyj0R8JwceLleyGSP3NKtt">搜索</button>
+              <button data-act="copy" data-page-node-id="8N3DUrmfVGUCXXLDpXyBIC">复制</button>
+            </div>
+            <div class="sel-row" id="selEditRow" hidden data-page-node-id="fKJq0zvH8bDWjJZwOaOSbl">
+              <button data-act="edit" data-page-node-id="ilwR8vZzaSqZax2Hefj1g4">✎ 编辑原文</button>
+              <button data-act="undo" data-page-node-id="BuETVZ7uHDBeBaMcF0fHcG">↶ 撤销修订</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 点击区：上一页 / 菜单 / 下一页 -->
+        <div class="tap-zones" id="tapZones" data-page-node-id="EDvojCDOvi1Nhkj2VVatCT">
+          <div class="tap-zone" data-zone="prev" data-page-node-id="HHd3uUvjIqflI8zpDCD7PN"></div>
+          <div class="tap-zone" data-zone="menu" data-page-node-id="GzU1be9Aayjp4EXXo2bTRC"></div>
+          <div class="tap-zone" data-zone="next" data-page-node-id="3xucBy0zOh2cQ3CDtLJtQu"></div>
+        </div>
+
+        <!-- 顶栏 -->
+        <div class="reader-bar top-bar" id="topBar" data-page-node-id="4HNMTT7qiiUyDRBOIFkaQH">
+          <button class="bar-btn" id="closeBtn" title="返回书库" data-page-node-id="ZNMK1Nr5WXioUxZRVelN5Y">‹ 书库</button>
+          <div class="bar-title" id="readerTitle" data-page-node-id="8gCevRtgqRpQa0Vp600zsH">书名</div>
+          <!-- R132（第 2 条）：顶栏也要看得见「翻译中」—— 划到新的一页时用户盯着的是这一栏 -->
+          <span class="bar-tr-busy" id="barTrBusy" hidden>翻译中</span>
+          <div class="bar-actions" data-page-node-id="ZrgDiIy2Je4Ya0UA1l3Kut">
+            <button class="bar-btn" id="favBtn" data-page-node-id="0OCNzENOh6eqohNWerwvn8">☆ 收藏</button>
+            <button class="bar-btn" id="tocBtn" data-page-node-id="HwnS1Hg8onxlCfArOFtexH">目录</button>
+            <button class="bar-btn" id="markBtn" data-page-node-id="NEizmohtM69x9DaV1V24Ux">书签</button>
+            <button class="bar-btn" id="noteListBtn" data-page-node-id="tKzOBXcSriH3Xv2ohWtgAj">笔记</button>
+            <button class="bar-btn" id="searchBookBtn" data-page-node-id="mZoTMunft0u8aq1YLv50II">搜索</button>
+            <button class="bar-btn" id="ttsBtn" data-page-node-id="VK0nLdFlak5IExaK7xnHM8">🔊 朗读</button>
+            <button class="bar-btn" id="penBtn" data-page-node-id="BcEanxPrM3uwPojD8vwrYw">✎ 手写</button>
+            <button class="bar-btn" id="ocrBtn" title="PDF 扫描页文字识别（OCR）" hidden>🔍 OCR</button>
+            <button class="bar-btn" id="readerBackupBtn" title="整库备份与恢复" data-page-node-id="xtl9ZgzpRPLMm9JEiq0QDr">💾</button>
+            <button class="bar-btn" id="readerShareBtn" title="局域网加密共享" data-page-node-id="HdRqVs7K3jbCNzWl9Flg3c">📡</button>
+            <button class="bar-btn" id="settingsBtn" data-page-node-id="3Z5aMCGORyjzUJIEgwFkZf">Aa</button>
+          </div>
+        </div>
+
+        <!-- 底栏 -->
+        <div class="reader-bar bottom-bar" id="bottomBar" data-page-node-id="xMxggjUMCTav5Q9G90WZSQ">
+          <button class="bar-btn" id="prevBtn" data-page-node-id="T2DBnLYmFilghOFHJwUPkc">‹</button>
+          <div class="progress-wrap" data-page-node-id="2unNHieybcOXSGbnCcia91">
+            <input type="range" id="progressSlider" min="0" max="100" value="0" step="0.1" data-page-node-id="sRTczmqb8cGMPe2lQ5cl3b">
+            <div class="page-label" id="pageLabel" data-page-node-id="OV2eNLVLjpLWuJ15tUrlfJ">0 / 0</div>
+          </div>
+          <button class="bar-btn" id="nextBtn" data-page-node-id="qe4O66unvMmo9e11C4POsc">›</button>
+          <div class="bar-divider" data-page-node-id="N9zxY5JHvOZkFZdA0o9yAC"></div>
+          <button class="bar-btn" id="dirBtn" title="切换翻页方向" data-page-node-id="LLDztpr3NTkUdOGPQDHne0">⇄ 左右</button>
+          <button class="bar-btn" id="htmlModeBtn" title="富文本：翻页 / 滚动" hidden>📜 滚动</button>
+          <button class="bar-btn" id="comicModeBtn" title="分页 / 连续卷轴（条漫）" data-page-node-id="s5uxveGuvXUUAIB6OR5wx3">📄 分页</button>
+          <button class="bar-btn" id="autoBtn" title="自动翻页" data-page-node-id="91thcf48wQNeyKK9r4ACnn">▶ 自动</button>
+          <div class="speed-wrap" id="speedWrap" hidden data-page-node-id="dK8AmlR5V0U5NKziPzlBOm">
+            <span class="speed-txt" data-page-node-id="FHcrb2AlA96DCQfWHUG4VO">速度</span>
+            <input type="range" id="speedSlider" min="1" max="30" value="6" data-page-node-id="15FtDOUR3R60UxiYAv88jB">
+            <span class="speed-val" id="speedVal" data-page-node-id="chMsuLOQZ7pgXJd0KxPXTp">6s</span>
+          </div>
+        </div>
+
+        <!-- 抽屉 / 弹层（#scrim 已移到 #ipad 顶层，见 reader 视图之后） -->
+        <aside class="drawer drawer-left" id="tocDrawer" data-page-node-id="ZWyppmKTJDOtBdEO6JpDpt">
+          <div class="drawer-head" data-page-node-id="iOIhXHeAGX56ETtmbR7Cmy"><h3 data-page-node-id="HLaSt8JxNCZpRvavyOgc05">目录</h3><button class="drawer-close" data-close data-page-node-id="igJ9EcHwZfHI2YXBjSqj7s">完成</button></div>
+          <div class="drawer-body" id="tocList" data-page-node-id="sBbQUNwUpHHWaXruprPhCP"></div>
+        </aside>
+
+        <aside class="drawer drawer-left" id="markDrawer" data-page-node-id="n9vPj9AgihqhmOOALvyR0R">
+          <div class="drawer-head" data-page-node-id="x0eGQNdCHNe6c28ePrFs0j"><h3 data-page-node-id="CYoaCpqXABNATkqjCNe1BC">书签</h3><button class="drawer-close" data-close data-page-node-id="fD6eerIjhHsSMKT2t2HtTV">完成</button></div>
+          <div class="drawer-body" id="markList" data-page-node-id="6eZUmVCr4lELk2BCUbGkYG"></div>
+        </aside>
+
+        <aside class="drawer drawer-left" id="noteDrawer" data-page-node-id="O7NCK4gKM4xh4fAseeMw0a">
+          <div class="drawer-head" data-page-node-id="rdhgHEgX1es9utD8HlctGY"><h3 data-page-node-id="WcSI1DsEMCZhvBpwAt55iG">笔记与高亮</h3><button class="drawer-close" data-close data-page-node-id="ssGHMrSDQWtn1zZKz3zf0X">完成</button></div>
+          <div class="drawer-body" id="noteList" data-page-node-id="yV8SMsMUdy5WPHAIYzX5Fz"></div>
+        </aside>
+
+        <aside class="drawer drawer-right" id="ocrDrawer" data-page-node-id="ocrDrawerNode">
+          <div class="drawer-head"><h3 id="ocrDrawerTitle">PDF OCR</h3><button class="drawer-close" data-close>完成</button></div>
+          <div class="drawer-body" id="ocrDrawerBody"></div>
+        </aside>
+        <aside class="drawer drawer-right dict-drawer" id="dictDrawer" data-page-node-id="otN8Kj8t1VrserFxKfsDaX">
+          <div class="drawer-head" data-page-node-id="AoBCmF5tJgLBLONiv3oRA1"><h3 data-page-node-id="RkcduuhBifkTb7uUiggD2m">查词</h3><button class="drawer-close" data-close data-page-node-id="D42Gy89ZaIpvXWjGaAupg8">完成</button></div>
+          <div class="drawer-body dict-body" data-page-node-id="yjHRQHupayK3xrJUYxuYTl">
+            <div class="dict-word" id="dictWord" data-page-node-id="kzvAknxfJsM8AKb6tqxO69"></div>
+            <div class="dict-query" data-page-node-id="2CpYu2vtodoK2neTzh3n2X">
+              <input id="dictQuery" type="text" autocomplete="off" spellcheck="false"
+                     placeholder="查询词（可改成词组或整句）" data-page-node-id="3itbqGYZJckUGsjZ5b71We">
+              <button class="btn-primary dict-go" id="dictGo" data-page-node-id="lhynQpohwCKiszKWyIo0le">查询</button>
+            </div>
+            <div class="dict-hint" id="dictHint" data-page-node-id="HNVJaTmmYrmSoXIDTHEtuB"></div>
+            <div class="dict-sec" id="dictDictSec" data-page-node-id="B48Wq93xIlKdgOKXkUXILp">
+              <div class="dict-sec-t" data-page-node-id="qct9FYbI9uteyZSs0im9tb">内置简明词典</div>
+              <div id="dictLocal" data-page-node-id="gTGJDq5Vd3XcxHLxbd7Zd7"></div>
+            </div>
+            <div class="dict-sec" id="dictOnlineSec" data-page-node-id="XXC9R2WE8G6oysoK5xUMGQ">
+              <div class="dict-sec-t" data-page-node-id="RHFYj25k94wO1g9wo7BnZI">在线释义</div>
+              <div id="dictOnline" data-page-node-id="ZCWfpo27TomB8lFusNlltY"></div>
+            </div>
+            <div class="dict-sec" data-page-node-id="mMBynsMoQFmJm9QDqwweCx">
+              <div class="dict-sec-t" data-page-node-id="XhPwstPXcnjU5EGtCsPd6T">
+                小窗浏览器
+                <button class="dict-ext" id="dictOpenExt" data-page-node-id="GjaSFG1eE3MkTwMdYzUCPv">用系统浏览器打开 ↗</button>
+              </div>
+              <div class="dict-sites" id="dictSites" data-page-node-id="pAgyibIuHKKLwLFBojs9wu"></div>
+              <div class="dict-warn" id="dictProxyWarn" hidden data-page-node-id="oG3wBRx7yYcHEQIgBD5ZI8">
+                未检测到本地代理（请用 <code data-page-node-id="1kUfkgzxKBSP7YZErHB8Xf">tools/serve.py</code> 启动），部分站点无法内嵌。
+              </div>
+              <div class="dict-browser" id="dictBrowser" data-page-node-id="tJZV19FcKZFAjs8duFDhbF">
+                <iframe class="dict-frame" id="dictFrame" data-page-node-id="38GFboNvzHMcqiCTDpCZDY"></iframe>
+              </div>
+              <div class="dict-frame-status" id="dictFrameStatus" data-page-node-id="PTE9W678QgpwOxpEU7jRlf"></div>
+            </div>
+          </div>
+        </aside>
+
+        <!-- 书内搜索 -->
+        <div class="search-bar" id="searchBar" hidden data-page-node-id="BVGEx1XWFlwfy6TjF5uptx">
+          <input type="search" id="bookSearchInput" placeholder="在本书中搜索" data-page-node-id="HPJF0DW3xyWm4kpH0x9nws">
+          <div class="search-nav" data-page-node-id="QYm0Gt9NPDuIGVSlcjB9y0">
+            <span id="searchCount" data-page-node-id="iPMCE8C6R4OcuWTvptnZCF">0 结果</span>
+            <button id="searchPrev" data-page-node-id="gkrOZ4CFv5IMfT8jAGv766">‹</button>
+            <button id="searchNext" data-page-node-id="0QFmzVDQTCD7cCPEr3eR52">›</button>
+            <button id="searchDone" data-page-node-id="rNX5EU9fS5qqzlfHY4yZjK">完成</button>
+          </div>
+        </div>
+
+        <!-- 手写工具条 -->
+        <div class="pen-bar" id="penBar" hidden data-page-node-id="YvYz750X2RGLQ3xX5eHT1E">
+          <div class="pen-group" id="penTools" data-page-node-id="scbQmcAIttvCn6Rlc4lewk">
+            <button class="pen-tool active" data-tool="pen" data-page-node-id="nCzMeoC7vbtcEvbb7D8HQG">✏️ 钢笔</button>
+            <button class="pen-tool" data-tool="marker" data-page-node-id="Asp8dDKr5rhs1LMjDsCLG7">🖍️ 荧光笔</button>
+            <button class="pen-tool" data-tool="eraser" data-page-node-id="d5GfzSKlytJ8DjHISVttT1">🧽 橡皮</button>
+            <button class="pen-tool" data-tool="select" title="框住字迹后可移动 / 缩放 / 换色" data-page-node-id="R88selT00l">🔲 框选</button>
+          </div>
+          <div class="pen-group" id="penColors" data-page-node-id="A7l2ZTZR6zYII6KGY2XQ7E"></div>
+          <div class="pen-group" data-page-node-id="YWRJF38vw9WkzCSYkHSSyp">
+            <span class="pen-label" data-page-node-id="AKgA7miQB3eVWEjA2yXPFk">粗细</span>
+            <input type="range" id="penWidth" min="1" max="24" value="4" data-page-node-id="vIJKQQq6ZgIyBZerVHDs4V">
+          </div>
+          <div class="pen-group" data-page-node-id="aiA10kwrnqxbaRmEj0xmSw">
+            <button class="pen-tool" id="undoBtn" data-page-node-id="3PGU5hIUwdgA3V3LSiQSbi">↶ 撤销</button>
+            <button class="pen-tool" id="clearInkBtn" data-page-node-id="F2EnfOE9XnKA1XtAJRUEQI">清空本页</button>
+            <button class="pen-tool" id="inkDelBtn" hidden title="删掉框选的字迹（也可以按 Delete / Backspace）" data-page-node-id="R89delBtn0001">🗑 删除选中</button>
+            <button class="pen-tool done" id="penDoneBtn" data-page-node-id="APemVncsJwCk689nCeR64e">完成</button>
+          </div>
+        </div>
+
+        <!-- 朗读控制条 -->
+        <div class="pen-bar tts-bar" id="ttsBar" hidden data-page-node-id="kaCGJqBvFHN8Qo151LVNm8">
+          <div class="pen-group" data-page-node-id="WoWFFb66YGdwIXnf9ViPbM">
+            <button class="pen-tool" id="ttsPlayBtn" data-page-node-id="Ayttqtd4Y1sEKzaozSGzsQ">⏸ 暂停</button>
+            <button class="pen-tool" id="ttsStopBtn" data-page-node-id="9ARCD7Ogdaz5nhJpcNEcAH">⏹ 停止</button>
+          </div>
+          <div class="pen-group" data-page-node-id="uGwyHm2ABH5fBu5I22slEp">
+            <span class="pen-label" data-page-node-id="4CeQI3Emu9UwJWTmnW1syi">语速</span>
+            <input type="range" id="ttsRate" min="0.5" max="2" step="0.1" value="1" data-page-node-id="nFDL3NDCirh5SMAgDRfBKK">
+            <span class="speed-val" id="ttsRateVal" data-page-node-id="510dOqnD83ARRenyesZTzZ">1.0×</span>
+          </div>
+          <div class="pen-group" data-page-node-id="l8XCBipbCKjv6SJDQrRWXH">
+            <span class="pen-label" data-page-node-id="AZfookkaTJ8tO6WoozKDcA">声音</span>
+            <select id="ttsVoice" class="tts-select" data-page-node-id="tkTunAQLMGtFvDIwad9Aym"></select>
+          </div>
+          <div class="pen-group" data-page-node-id="OTKlKhhcDmO6TN0UTHmsYD">
+            <span class="pen-label" id="ttsStatus" data-page-node-id="wJwVDqDbVtKL5MIbrXnn6P">准备中…</span>
+          </div>
+        </div>
+
+        <!-- 标记检视器：一次查看当前位置的所有标记 -->
+        <div class="sheet" id="markSheet" hidden data-page-node-id="76Zzc6WbG73qA9IO2tLFR6">
+          <div class="sheet-card" data-page-node-id="2Gl1Uwge0gQPSlFtBhCzAK">
+            <div class="sheet-head" data-page-node-id="42YGpgS4kCOJQyE3DgDdaD"><h3 data-page-node-id="LIOnz8m2dRnTLhiWMoVoKH">此处的标记</h3></div>
+            <div class="mk-list" id="markSheetList" data-page-node-id="ulFu8EzHeu1SAf7wtn8g99"></div>
+            <div class="sheet-actions" data-page-node-id="wmpaatC9GDsCTu5sfQjIjx">
+              <button class="btn-plain" id="markSheetClose" data-page-node-id="L5Qe9UCqUUD8tuYbPdPnLU">关闭</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 笔记编辑器 -->
+        <div class="sheet" id="noteSheet" hidden data-page-node-id="FqiyNhDPrixkcs2WvdaIx4">
+          <div class="sheet-card" data-page-node-id="7mUUTTKPd9EzgttNtFiQXC">
+            <div class="sheet-head" data-page-node-id="dSvfP7DEgCaCpHrlQOR6ek"><h3 id="noteSheetTitle" data-page-node-id="2JmPZGqmyw6hlvcCZfdVUJ">笔记</h3></div>
+            <div class="quote" id="noteQuote" data-page-node-id="RvFLY9A5IeEJCxw9gGxyxj"></div>
+            <!-- 同一片文字上的多条笔记列表（≥2 条才显示）：点哪条就编辑哪条，解决「像栈一样只能看到最上面」 -->
+            <div class="note-list" id="noteSheetList" hidden></div>
+            <div class="note-meta" data-page-node-id="zyNRnHkRsLHHMHDkW0JLB4">
+              <div class="note-mk-row" id="noteStyles" data-page-node-id="rYFJ2teYttGwGqosgoGXWL"></div>
+              <div class="note-mk-row" id="noteColors" data-page-node-id="IFtxOrxFVmoNvI0SN6LG1h"></div>
+            </div>
+            <textarea id="noteText" placeholder="写下你的想法…"></textarea>
+            <div class="sheet-actions" data-page-node-id="QfufvGXCK2vK552Dgwv0gI">
+              <button class="btn-plain danger" id="noteDelete" hidden data-page-node-id="O6E0jLviUmCSMuH9uMVIj1">删除</button>
+              <button class="btn-plain" id="noteMarkOnly" hidden title="已合并进「存储」：不写笔记直接存储就是只加标记">只加标记</button>
+              <span style="flex:1" data-page-node-id="BJoTPvKYVn9JHFHZjMNg1M"></span>
+              <button class="btn-plain" id="noteCancel" data-page-node-id="3T7PSHc5BDW266K7QaG1cd">取消</button>
+              <button class="btn-primary" id="noteSave" data-page-node-id="7XMGT3kAa4cyktzu19fnCZ">存储</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Markdown 原文编辑器（R59：.md 也要能改）。整篇编辑，保存后重新渲染并重定位标记。 -->
+      <div class="sheet" id="mdEditSheet" hidden>
+        <div class="sheet-card md-edit-card">
+          <div class="sheet-head">
+            <h3 id="mdEditTitle">编辑 Markdown 原文</h3>
+            <button class="drawer-close" id="mdEditClose">关闭</button>
+          </div>
+          <div class="md-edit-tip" id="mdEditTip">保存会重排正文和目录，已有的标记 / 笔记按文字自动重定位。</div>
+          <textarea id="mdEditText" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+          <div class="sheet-actions">
+            <span class="md-edit-count" id="mdEditCount"></span>
+            <button class="btn-plain md-edit-undo" id="mdEditUndo" title="撤销上一步修改（可连续撤销到打开时的内容）">↶ 撤销</button>
+            <span style="flex:1"></span>
+            <button class="btn-plain" id="mdEditCancel">取消</button>
+            <button class="btn-primary" id="mdEditSave">保存</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 阅读设置抽屉 / 全屏遮罩：放在 #ipad 顶层（不在任何 .view 内），
+           这样书架页也能打开「Aa 设置」。.ipad 是 position:relative，定位与原来一致。 -->
+      <div class="scrim" id="scrim" data-page-node-id="nXJ2P4NAw36ovfB2AU8t5z"></div>
+      <aside class="drawer drawer-right" id="settingsDrawer" data-page-node-id="qhFmjiN3xfi0cLLUdg3UKe">
+        <div class="drawer-head" data-page-node-id="DeZAgI80b1uh3TtFrfBfAh"><h3 data-page-node-id="zIe8YBuYysLTjYRt5YTa6g">阅读设置</h3><button class="drawer-close" data-close data-page-node-id="Sb3Mi1h0yhqlXBy03N5fXr">完成</button></div>
+        <div class="drawer-body settings-body" id="settingsBody" data-page-node-id="Q7HBuE2mhzv3HQHiuHwetn"></div>
+      </aside>
+
+      <!-- 书籍操作菜单 -->
+      <div class="sheet" id="bookMenu" hidden data-page-node-id="b0xI4LImy0MPuH8xaxrplk">
+        <div class="sheet-card menu-card" data-page-node-id="nVNHw12CEJ7oKPXqKdKeRD">
+          <div class="sheet-head" data-page-node-id="20T74dHFTjOEWP2PmUW8Lo"><h3 id="bookMenuTitle" data-page-node-id="rNClHJ25a6dAXxxMeBmswn">书名</h3></div>
+          <div class="menu-list" id="bookMenuList" data-page-node-id="4GVpXsbTIdaWckpQxAML92"></div>
+          <div class="sheet-actions" data-page-node-id="BE4BBCr5gvBftWtbGnpBeZ"><button class="btn-plain" id="bookMenuClose" data-page-node-id="FexhbXggoBtho1YSStK7wS">取消</button></div>
+        </div>
+      </div>
+
+      <!-- 漫画页面管理：排序 / 拆分 / 删页
+           注意：必须排在 #inputSheet / #choiceSheet 之前，
+           否则它里面的「拆成新书」弹输入框时会被自己盖住 -->
+      <div class="sheet" id="pageSheet" hidden data-page-node-id="rWZ6lfjUHcIAMfepIGGGZM">
+        <div class="sheet-card page-card" data-page-node-id="eOTIoiRFJBO2lx7JEx68RN">
+          <div class="sheet-head" data-page-node-id="EkG5ACWPZNs0x67O1LJHgR">
+            <h3 id="pageSheetTitle" data-page-node-id="W0ka4lVWHphqCBzkq8iM53">页面管理</h3>
+            <span class="page-count" id="pageSheetCount" data-page-node-id="EGvFzhHi2vZm32jyMlK6vP"></span>
+            <button class="drawer-close" id="pageSheetClose" data-page-node-id="UQy8C9DaicUET36dCuLYAa">关闭</button>
+          </div>
+          <div class="page-tools" data-page-node-id="rJzxpfvbPxItnph0qdb6CT">
+            <button class="bulk-btn" id="pgSortName" data-page-node-id="4gW4BoUOYHWsnqytnXPHDX">按文件名重排</button>
+            <button class="bulk-btn" id="pgReverse" data-page-node-id="zAJryBPBVeOJEc2DURKtrk">反转顺序</button>
+            <button class="bulk-btn" id="pgAll" data-page-node-id="mBK3I9RSMTYrt5jTkDIW9f">全选</button>
+            <button class="bulk-btn" id="pgNone" data-page-node-id="fIQEaYPDA36uh6flPOh0Ml">全不选</button>
+            <span class="bulk-spacer" data-page-node-id="LFN5R9rmZE1fEcAY4iGXfT"></span>
+            <span class="bulk-count" id="pgCount" data-page-node-id="2hLrUsWc6jIBmmHa1QnlaT">已选 0 页</span>
+          </div>
+          <div class="page-grid" id="pageGrid" data-page-node-id="x8sP4SttcsVkT1WcfzWbRx"></div>
+          <div class="page-acts" data-page-node-id="Amy58wCdgka35AKzsu7eCC">
+            <button class="btn-primary" id="pgSplit" data-page-node-id="iDnfmtM8H9WRKjuOteMshC">✂️ 把勾选的页拆成新书</button>
+            <button class="btn-plain" id="pgDelete" data-page-node-id="pgqeRHhxsnUfnHuIXpuewR">🗑 删除勾选的页</button>
+          </div>
+          <div class="share-tip" style="padding:0 14px 12px" data-page-node-id="SWheYrKNURXISIwCoBJfWg">
+            点缩略图勾选；<b data-page-node-id="rYoh1UfRWryVRWagjBgBkb">↑ ↓</b> 挪位置，<b data-page-node-id="jKvc74U4qAocfpIvit1Bun">✕</b> 删这一页。拆出的新书保留原排序。
+          </div>
+        </div>
+      </div>
+
+      <!-- 整库备份 / 恢复 -->
+      <div class="sheet" id="backupSheet" hidden data-page-node-id="7hZohL7uFEjVJ31LKHtFFb">
+        <div class="sheet-card" data-page-node-id="3tZdGMjEbYqqnChs2QAHyH">
+          <div class="sheet-head" data-page-node-id="FIDy313fcutcRP9QOsziZx">
+            <h3 data-page-node-id="5pK7gULEbjsv5iHp3QbAVm">整库备份</h3>
+            <button class="drawer-close" id="backupClose" data-page-node-id="FMys83HxBt5OVHyXsU3aH3">关闭</button>
+          </div>
+          <div class="share-body" style="padding:0 14px" data-page-node-id="Yphaa2056ZXS3iXdD9hzZg">
+            <div class="share-tip" data-page-node-id="ridUii15BVE1Zb9BOfRHZa">
+              书存在浏览器数据库里，<b data-page-node-id="TmW6G9XimTp9eE5ZZTkZZM">清缓存 / 换浏览器 / 卸载都会全丢</b>。
+              备份含书籍、笔记书签、收藏和设置，可整库或只勾几本。
+            </div>
+            <div class="share-scope" data-page-node-id="htAA7RCdkNi2dpDNtsRCG4">
+              <div class="ss-line" data-page-node-id="UaBXRvLmzyaQAN6lGQAe0p">
+                <span id="backupScopeTxt" data-page-node-id="dYfOHyO70paIc47zLUTeSD">备份范围：全部</span>
+                <button class="btn-plain" id="backupPick" style="padding:5px 11px;font-size:13px" data-page-node-id="AiXnwFGuzcqjW9IujBSBQU">选择书籍…</button>
+              </div>
+              <div class="ss-list" id="backupScopeList" data-page-node-id="DjE7PqPMuEJQnUtXwnO8sn"></div>
+              <div class="ss-hint" id="backupScopeHint" data-page-node-id="yTp1z0HI0KB7oyr9dxkYtG">不点「选择书籍」就是备份整库。</div>
+            </div>
+            <div class="backup-stat" id="backupStat" data-page-node-id="rYdrzkGmyc5WFduuyMl1J3"></div>
+          </div>
+          <div class="share-acts" style="padding:0 14px 12px" data-page-node-id="mw3AGBE9uzIlNZDOHCqiHp">
+            <button class="btn-primary" id="backupExport" data-page-node-id="6vArsjvbaqrAWFFJ1pc1GC">⬆️ 导出备份</button>
+            <button class="btn-primary" id="backupImport" data-page-node-id="2CEDWze3UZsOUcxFFGNNA4">⬇️ 从备份恢复</button>
+          </div>
+          <div class="share-acts" style="padding:0 14px 4px" data-page-node-id="backupClearWrap">
+            <button class="btn-primary" id="backupClearAll" style="width:100%;background:#FF3B30;border-color:#FF3B30;color:#fff">🗑 一键清空全部（书 / 笔记 / 收藏夹 / 设置）</button>
+          </div>
+          <div class="share-tip" id="backupTip" style="padding:0 14px 12px" data-page-node-id="7oOE9fR6DaukIWJ4hvRCQi"></div>
+        </div>
+      </div>
+      <input type="file" id="backupInput" accept=".zip,application/zip" hidden data-page-node-id="7FNtvyAal3peGC5BhXGzKV">
+
+      <!-- 选区翻译结果 -->
+      <div class="sheet" id="translateSheet" hidden data-page-node-id="trnslSheet">
+        <div class="sheet-card" data-page-node-id="trnslCard">
+          <div class="sheet-head" data-page-node-id="trnslHead"><h3 data-page-node-id="trnslH3">译文</h3>
+            <button class="drawer-close" id="transClose" data-page-node-id="trnslClose">关闭</button></div>
+          <div class="trans-block" data-page-node-id="trnslOrigWrap">
+            <div class="trans-label" data-page-node-id="trnslO">原文</div>
+            <div class="trans-text" id="transOriginal" data-page-node-id="trnslO2"></div>
+          </div>
+          <div class="trans-block" data-page-node-id="trnslResWrap">
+            <div class="trans-label" data-page-node-id="trnslR">译文</div>
+            <div class="trans-text" id="transResult" data-page-node-id="trnslR2"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 通用输入（重命名 / 新建收藏夹） -->
+      <div class="sheet" id="inputSheet" hidden data-page-node-id="ECiybvUlyqOwcdIlXvzmNz">
+        <div class="sheet-card" data-page-node-id="SNIUIKHMFMwh916rM3qr4R">
+          <div class="sheet-head" data-page-node-id="wRqqUxkJSXcZ14dFIr8Frv"><h3 id="inputTitle" data-page-node-id="KAFYeMlQmwP0yhiIdRMXDC">输入</h3></div>
+          <div class="input-wrap" data-page-node-id="UiFmaEv96BS9o7VOmWHDdB"><input id="inputField" type="text" autocomplete="off" data-page-node-id="HmvEY4Ds37qYmdriAKHjMy"></div>
+          <div class="sheet-actions" data-page-node-id="5JnTmhncCD30gVruyXdDiA">
+            <button class="btn-plain" id="inputCancel" data-page-node-id="lub8asOuC6b6uVeVr3OkEa">取消</button>
+            <button class="btn-primary" id="inputOk" data-page-node-id="dVFGUASn4wURHC2wUay3Z8">确定</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 通用选择（换颜色 / 选收藏夹） -->
+      <div class="sheet" id="choiceSheet" hidden data-page-node-id="5DUIHz71MP1YWxEkT51An4">
+        <div class="sheet-card" data-page-node-id="CfZowqUF0xUbhS7F01luEA">
+          <div class="sheet-head" data-page-node-id="AwngSqUFhPKyHWEtwsuMks">
+            <h3 id="choiceTitle" data-page-node-id="52lB244TFGEcLzpFEvFGG8">请选择</h3>
+            <button class="drawer-close" id="choiceCancel" data-page-node-id="gKXRSeUTPovZI7fyRyZapI">取消</button>
+          </div>
+          <div class="choice-search" id="choiceSearchWrap" hidden data-page-node-id="choiceSearchWrapNode">
+            <input id="choiceSearch" type="text" placeholder="搜索书名" autocomplete="off" spellcheck="false" enterkeyhint="search" data-page-node-id="choiceSearchInputNode">
+          </div>
+          <div class="choice-list" id="choiceList" data-page-node-id="iLJXtDto2N6PLpvE8eJBYT"></div>
+        </div>
+      </div>
+
+      <!-- 标签编辑（单书全量 / 批量加标共用） -->
+      <div class="sheet" id="tagSheet" hidden data-page-node-id="tagSheetNode">
+        <div class="sheet-card">
+          <div class="sheet-head">
+            <h3 id="tagSheetTitle">标签</h3>
+            <button class="drawer-close" id="tagSheetClose">关闭</button>
+          </div>
+            <div class="tag-edit-body">
+            <div class="tag-chips" id="tagChips"></div>
+            <div class="input-wrap">
+              <input id="tagInput" type="text" placeholder="输入标签，回车或逗号添加…" autocomplete="off">
+            </div>
+            <div class="tag-suggest" id="tagSuggest" hidden></div>
+            <div class="tag-hint" id="tagSheetHint"></div>
+          </div>
+          <div class="sheet-actions">
+            <button class="btn-plain" id="tagCancel">取消</button>
+            <button class="btn-primary" id="tagDone">完成</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 局域网加密共享 -->
+      <div class="sheet" id="shareSheet" hidden data-page-node-id="jGlN1B5Yiv0R9gMx9lNJF4">
+        <div class="sheet-card" data-page-node-id="EJ2IkZNhX0Zmp4FipNzMkQ">
+          <div class="sheet-head" data-page-node-id="J4kHEREMgdzue5t9dvTHvn">
+            <h3 data-page-node-id="fN9cFOqk5AI3CtXB7A9F4f">局域网加密共享</h3>
+            <button class="drawer-close" id="shareClose" data-page-node-id="FBetODvYOSI1hegGt5Il8q">关闭</button>
+          </div>
+
+          <div class="seg" id="shareSeg" style="margin:10px 14px 4px" data-page-node-id="dBBZWDbV0wj8O9JlQ31sSl">
+            <button class="seg-btn active" data-role="host" data-page-node-id="SngypfSfwBQytHGKh6P8JO">我分享给别人</button>
+            <button class="seg-btn" data-role="client" data-page-node-id="iyL2S6xbUQttVpwq7ih4wY">我接收别人的</button>
+            <button class="seg-btn" data-role="device" data-page-node-id="d7VvDevTab0Pane1">连到别的设备</button>
+          </div>
+
+          <!-- 主机端 -->
+          <div id="shareHostPane" data-page-node-id="qPNJ9udfTpmyRiL421oc4Z">
+            <div class="share-body" style="padding:0 14px" data-page-node-id="ZcDV2NWCoA4TvMCS30n9FQ">
+              <div class="input-wrap" data-page-node-id="HbIxHsfq5omTjRaHA6pP89"><input id="shareName" type="text" placeholder="共享名称，如：墨阅书库" autocomplete="off" data-page-node-id="P2Qwj0hfxggq8FvpSdiVio"></div>
+              <div class="input-wrap" data-page-node-id="ErYEiUMWq9Vv8fjBpE04ea"><input id="sharePwd" type="password" placeholder="共享密码（对方下载时要输入）" autocomplete="new-password" data-page-node-id="d3dc2QzLOaV14LNojyPYFg"></div>
+              <!-- 共享内容（R66）：书本身一定发，笔记 / 手迹 / 目录各自单独开关 -->
+              <div class="share-scope" id="shareOpts">
+                <div class="ss-line"><b>共享内容</b><span class="ss-hint" style="margin:0">书本身一定会发</span></div>
+                <label class="share-opt"><input type="checkbox" id="shOptNotes" checked> 笔记 / 高光 / 书签</label>
+                <label class="share-opt"><input type="checkbox" id="shOptInk"> 手迹涂鸦（PDF/漫画按页面坐标，版式不同会偏）</label>
+                <label class="share-opt"><input type="checkbox" id="shOptToc" checked> 书的目录（层级原样保留）</label>
+                <div class="ss-hint" style="margin-top:2px">文字书按<b>文字位置</b>对齐，换设备也准；PDF / 漫画按<b>页面坐标</b>画，版式一变就偏一点。</div>
+              </div>
+              <!-- 共享范围：明确告诉用户现在到底共享了哪几本 -->
+              <div class="share-scope" id="shareScope" data-page-node-id="8ObscVGZXBG5Ddq2zl7vuV">
+                <div class="ss-line" data-page-node-id="jkv04eAA5Gzcb1EseHnyCL"><b data-page-node-id="47xAuWcY6ClMNjJuQipPdi">共享范围</b><button class="btn-plain" id="sharePick" style="padding:2px 8px;font-size:12px" data-page-node-id="wf8fhZzNqR8LX3zfudsvpJ">更改…</button></div>
+                <div class="ss-list" id="shareScopeList" data-page-node-id="rUM9EGOLojI0vDs5ogoO3R">全部书籍</div>
+              </div>
+              <!-- 本机地址：直接显示，方便复制给对方 -->
+              <div class="share-scope" id="shareMyAddr" data-page-node-id="NqPHR1JQmdCOhLa8ehE0ju">
+                <div class="ss-line" data-page-node-id="te0NwhJpPuxQKrUmp8vVqj">
+                  <b data-page-node-id="W6V6J52bOqrwpW5wfERuo9">本机地址</b>
+                  <button class="btn-plain" id="shareAddrRefresh" style="padding:2px 8px;font-size:12px" data-page-node-id="AvPNF72IEwNzM8gDbFSHdB">刷新</button>
+                </div>
+                <div class="ss-list" id="shareAddrList" data-page-node-id="weJJPvjQ2z7E0RQNuJHg1K">读取中…</div>
+                <div class="ss-hint" id="shareAddrHint" data-page-node-id="QLn3CinRcNoqe9FRiyj9XF"></div>
+              </div>
+              <div class="share-tip" data-page-node-id="q9JbvvgGGcWgPFfTqbwJ4v">
+                端到端加密：用密码派生的密钥在本机加密后才上传，服务器只看到密文。
+              </div>
+            </div>
+            <div class="share-acts" style="padding:0 14px 12px" data-page-node-id="OXp9s8k9NX4RqPe1uESeSH">
+              <button class="btn-primary" id="shareStart" data-page-node-id="FAeshlPKa51gWDPG2TDD8U">开启共享</button>
+              <button class="btn-plain" id="shareStopBtn" hidden data-page-node-id="q9u3JDPlG8QJbHL3lVV94M">停止共享</button>
+            </div>
+            <div class="share-tip" id="shareHostTip" style="padding:0 14px 12px" data-page-node-id="BDGM3b1Nxx8UkQDWrknZeM">尚未开启。</div>
+          </div>
+
+          <!-- 客户端 -->
+          <div id="shareClientPane" hidden data-page-node-id="JMtyFwhjKQgIMD5FCtpoBN">
+            <div class="share-body" style="padding:0 14px" data-page-node-id="roPtdwUjdwBRM1a6UIz7Yl">
+              <div class="input-wrap" data-page-node-id="SI2mj3xkYQ6eJbmefiBtWQ"><input id="shareAddr" type="text" placeholder="对方地址：局域网地址:8123" autocomplete="off" data-page-node-id="pvePDHGiTtAlri2DoqVCrU"></div>
+              <div class="input-wrap" data-page-node-id="Q7JDIARaTkywlgZ9mO0HuI"><input id="shareIdIn" type="text" placeholder="共享 ID" autocomplete="off" data-page-node-id="zvDlCHqA20piE5bR1ji5mJ"></div>
+              <div class="input-wrap" data-page-node-id="7Nv6BmmaxniZxH2lDU8NeG"><input id="sharePwdIn" type="password" placeholder="共享密码" autocomplete="current-password" data-page-node-id="5VonZRFqnfkSulmLAbague"></div>
+            </div>
+            <div class="share-acts" style="padding:0 14px 12px" data-page-node-id="HISZbT4Sxs6UxoP4WwqyFq">
+              <button class="btn-primary" id="shareScan" data-page-node-id="E4Ev9WqxjLi9lm8wxVEOu3">🔍 自动发现</button>
+              <button class="btn-primary" id="shareConnect" data-page-node-id="WkCEL7EOWJiL4VeyuEOgwG">连接并列出</button>
+            </div>
+            <div class="share-tip" style="padding:0 14px 10px">
+              知道地址就直接填，点「连接并列出」；<b>留空则自动发现</b>。点一下扫到的共享，地址和 ID 自动填好。
+            </div>
+            <div class="share-list" id="shareList" style="padding:0 14px" data-page-node-id="8A7qaq4kL3KDCzz98tE4hD"></div>
+          </div>
+
+          <!-- 连到别的设备（R155）：整页切到另一台墨阅，用对方那本书库 -->
+          <div id="shareDevicePane" hidden data-page-node-id="d7VvDevPane0B0D1">
+            <div class="share-body" style="padding:0 14px" data-page-node-id="d7VvDevBody0B0D2">
+              <div class="share-scope" data-page-node-id="d7VvDevCur0B0D3">
+                <div class="ss-line" data-page-node-id="d7VvDevCurL0B0D4">
+                  <b data-page-node-id="d7VvDevCurT0B0D5">当前书架</b>
+                  <button class="btn-plain" id="devBackBtn" style="padding:2px 8px;font-size:12px" hidden data-page-node-id="d7VvDevBack0B0D6">↩ 回到本机</button>
+                </div>
+                <div class="ss-list" id="devCurList" data-page-node-id="d7VvDevCurV0B0D7">本机书库</div>
+              </div>
+              <!-- 占位符刻意写成 xxx：以前这里预填「本机地址」，用户截图/录屏时把自己的内网 IP 一起发出去了 -->
+              <div class="input-wrap" data-page-node-id="d7VvDevIn0B0D8"><input id="devAddr" type="text" placeholder="对方地址：局域网地址:8123" autocomplete="off" inputmode="url" data-page-node-id="d7VvDevInp0B0D9"></div>
+            </div>
+            <div class="share-acts" style="padding:0 14px 10px" data-page-node-id="d7VvDevActs0B10">
+              <button class="btn-primary" id="devScanBtn" data-page-node-id="d7VvDevScan0B11">🔍 自动发现</button>
+              <button class="btn-primary" id="devConnectBtn" data-page-node-id="d7VvDevConn0B12">连接</button>
+            </div>
+            <div class="share-tip" id="devStat" hidden style="padding:0 14px 8px" data-page-node-id="d7VvDevStat0B15"></div>
+            <div class="share-tip" style="padding:0 14px 10px" data-page-node-id="d7VvDevTip0B13">
+              <b>连接</b>＝直接用对方那本书库（自己这边一本不动，也不拷过来）。<br>
+              <b>⇄ 对账</b>＝两边的书互相补齐，进度/笔记按「后改的赢」合并 —— 这才是真同步。
+            </div>
+            <div class="share-list" id="devList" style="padding:0 14px" data-page-node-id="d7VvDevList0B14"></div>
+          </div>
+        </div>
+      </div>
+
+      <input type="file" id="coverInput" accept="image/*" hidden data-page-node-id="J5a1W3ObHoNTW8tUXUfQ3E">
+
+      <!-- 加载遮罩 -->
+      <div class="loading" id="loading" hidden data-page-node-id="8WUtb4F04nb88GxMhLWoLy">
+        <div class="spinner" data-page-node-id="nlJ2DL8vCzi6eIkRSCCIsq"></div>
+        <div class="loading-text" id="loadingText" data-page-node-id="ew8GgxwcwhrC0TBm6NhrAj">处理中…</div>
+      </div>
+
+      <!-- 首页指示条 -->
+      <div class="home-indicator" data-page-node-id="ytpWkGAaDs7b3HVzLWhMYm"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 导入文件（隐藏） -->
+<input type="file" id="fileInput" multiple
+       accept=".txt,.text,.md,.pdf,.cbz,.zip,.epub,.docx,.html,.htm,.xhtml,.doc,.wps,.rtf,.odt,.pages,image/*,.heic,.heif" hidden data-page-node-id="1SMVacBqjhmBzjXFzKLDPn">
+<!-- 导入文件夹（隐藏）：webkitdirectory 让浏览器允许选择整个目录 -->
+<input type="file" id="folderInput" webkitdirectory multiple hidden>
+
+<!-- Toast -->
+<div class="toast" id="toast" data-page-node-id="GE24Tn8CrLzERUkJwGtLJn"></div>
+
+<script src="vendor/jszip.min.js?v=20261121r177"></script>
+<script src="vendor/pdf.min.js?v=20261121r177"></script>
+<script src="vendor/katex/katex.min.js"></script>
+<script src="js/math.js?v=20261121r177"></script>
+<script src="js/db.js?v=20261121r177"></script>
+<script src="js/paginator.js?v=20261121r177"></script>
+<script src="js/importer.js?v=20261121r177"></script>
+<script src="js/ink.js?v=20261121r177"></script>
+<script src="js/ocr-paddle.js?v=20261121r177"></script>
+<script src="js/mt-local.js?v=20261121r177"></script>
+<script src="js/reader.js?v=20261121r177"></script>
+<script src="js/tts.js?v=20261121r177"></script>
+<script src="js/dict.js?v=20261121r177"></script>
+<script src="js/library.js?v=20261121r177"></script>
+<script src="js/share.js?v=20261121r177"></script>
+<script src="js/device.js?v=20261121r177"></script>
+<script src="js/peers.js?v=20261121r177"></script>
+<script src="js/backup.js?v=20261121r177"></script>
+<script src="js/sync.js?v=20261121r177"></script>
+<script src="js/main.js?v=20261121r177"></script>
+<script src="js/translate.js?v=20261121r177"></script>
+<script src="plugins/example-provider.js?v=20261121r177"></script>
+<script src="plugins/export-translation.js?v=20261121r177"></script>
+</body>
+</html>

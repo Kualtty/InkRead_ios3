@@ -1,0 +1,13 @@
+# 前端资源是从 Windows 树拷过来的，别让 autocrlf 把 js/html 改成 CRLF ——
+# 一是和源不一致（prepare_www.py --check 会报大小不同），二是 diff 全是噪音。
+* text=auto eol=lf
+
+# 二进制：绝不能做行尾转换，否则模型/wasm/图标会坏
+*.png binary
+*.jpg binary
+*.onnx binary
+*.wasm binary
+*.ipa binary
+*.zip binary
+*.ttf binary
+*.woff2 binary
