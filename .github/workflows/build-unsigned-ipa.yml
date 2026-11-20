@@ -37,21 +37,32 @@ jobs:
       - name: 编译
         run: |
           set -o pipefail
+          # -derivedDataPath 只能和 -scheme 一起用，报错就是
+          #   "The flag -scheme ... is required when specifying -derivedDataPath"
+          # 这个工程是脚本手写生成 pbxproj、没有 scheme（CI 里用 -target 就够了），
+          # 所以产物目录改用 SYMROOT/OBJROOT 指定 → build/Release-iphoneos/
           xcodebuild \
             -project InkReaderIOS.xcodeproj \
             -target InkReaderIOS \
             -configuration Release \
             -sdk iphoneos \
-            -derivedDataPath build \
+            SYMROOT="$PWD/build" \
+            OBJROOT="$PWD/build/obj" \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
             ONLY_ACTIVE_ARCH=NO \
-            -quiet
+            -quiet \
+            build
 
       - name: 打 ipa
         run: |
-          APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name "*.app" | head -1)
+          APP=$(find build/Release-iphoneos -maxdepth 1 -name "*.app" | head -1)
+          if [ -z "$APP" ]; then
+            echo "::error::没找到 .app，构建产物目录是空的"
+            ls -R build | head -40
+            exit 1
+          fi
           echo "产物：$APP"
           du -sh "$APP"
           mkdir -p Payload
